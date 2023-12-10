@@ -1,25 +1,21 @@
-```
-### TODO
-1. reinitialize service
-<br />
-```
+[Link to running instance](https://dimension-breaker.github.io/global-chat-ui/)
+[extra link](https://github.com/dimension-breaker/global-chat)
 
-```
-### Running Instance
 
-[title](https://dimension-breaker.github.io/global-chat-ui/)
-
-https://github.com/dimension-breaker/global-chat
-<br />
-
-```
 
 
 ```
-### Run Your Own Instance
-1. Run `ng serve`.
-2. Continue to deploy.
-3. Run `ng build --output-path docs --base-href ./global-chat-ui/`.
-4. In `docs/index.html`, change line 6 to `<base href="/global-chat-ui/">`.
+TODO
+ - reinitialize service
+```
 
+```
+Steps To Run Locally
+ - Run `ng serve`.
+```
+
+```
+Steps To Build
+ - Run `ng build --output-path docs --base-href ./global-chat-ui/`.
+ - In `docs/index.html`, change line 6 to `<base href="/global-chat-ui/">`.
 ```
