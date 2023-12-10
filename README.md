@@ -1,5 +1,5 @@
 ### TODO
-reinitialize service
+- reinitialize service
 
 ### Running Instance
 https://dimension-breaker.github.io/global-chat-ui/
