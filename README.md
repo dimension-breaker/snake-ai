@@ -6,7 +6,8 @@
 
 ```
 ### Running Instance
-https://dimension-breaker.github.io/global-chat-ui/
+
+[title](https://dimension-breaker.github.io/global-chat-ui/)
 
 https://github.com/dimension-breaker/global-chat
 <br />
