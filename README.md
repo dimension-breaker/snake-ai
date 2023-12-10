@@ -1,5 +1,5 @@
 ### Running Instance
-TODO
+https://dimension-breaker.github.io/global-chat-ui/
 
 ### Run Your Own Instance
 - Run `ng serve`.
