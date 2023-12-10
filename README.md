@@ -1,13 +1,11 @@
 ### TODO
 1. reinitialize service
-
 <br />
 
 ### Running Instance
 https://dimension-breaker.github.io/global-chat-ui/
 
 https://github.com/dimension-breaker/global-chat
-
 <br />
 
 ### Run Your Own Instance
