@@ -1,10 +1,12 @@
 ### TODO
 1. reinitialize service
 
+
 ### Running Instance
 https://dimension-breaker.github.io/global-chat-ui/
 
 https://github.com/dimension-breaker/global-chat
+
 
 ### Run Your Own Instance
 1. Run `ng serve`.
