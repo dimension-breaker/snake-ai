@@ -4,9 +4,9 @@ https://dimension-breaker.github.io/global-chat-ui/
 https://github.com/dimension-breaker/global-chat
 
 ### Run Your Own Instance
-1. Change Home, Projects, and About to Part 1 and Part 2.
-2. Add React keys.
-3. Reinitialize service.
+1. TODO Change Home, Projects, and About to Part 1 and Part 2.
+2. TODO Add React keys.
+3. TODO Reinitialize service.
 4. `ng serve`
 5. Continue to create a build.
 6. `ng build --output-path docs --base-href ./global-chat-ui/`
