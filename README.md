@@ -1,12 +1,12 @@
-## TODO
+# TODO
 1. reinitialize service
 
-## Running Instance
+# Running Instance
 https://dimension-breaker.github.io/global-chat-ui/
 
 https://github.com/dimension-breaker/global-chat
 
-## Run Your Own Instance
+# Run Your Own Instance
 1. Run `ng serve`.
 2. Continue to deploy.
 3. Run `ng build --output-path docs --base-href ./global-chat-ui/`.
