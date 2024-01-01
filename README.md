@@ -1,7 +1,7 @@
 # Running Instance
 https://dimension-breaker.github.io/global-chat-ui
 
-This project has been abandoned. I just wanted to test something real quick :smile:
+This project doesn't work and will not be fixed. I just wanted to test something quickly :smile:
 
 # Run Your Own Instance
 1. `ng serve`
