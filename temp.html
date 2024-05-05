@@ -1,0 +1,50 @@
+<canvas height='400' id='canvas' width='400' />
+<script>
+    window.onload = () => {
+        canvas = document.getElementById('canvas')
+        context = canvas.getContext('2d')
+        document.addEventListener('keydown', keydown)
+        setInterval(game, 1000 / 15)
+    }
+    let snakeY = snakeX = 100
+    let snakeDY = snakeDX = 0
+    let foodY, foodX = 200
+    let tail = []
+    let tailLength = 5
+    let game = () => {
+        snakeY += snakeDY
+        snakeX += snakeDX
+        context.fillStyle = 'black'
+        context.fillRect(0, 0, canvas.width, canvas.height)
+        context.fillStyle = 'lime'
+        tail.forEach(pos => {
+            context.fillRect(pos.x, pos.y, 20, 20)
+        })
+        tail.push({ y: snakeY, x: snakeX })
+        while (tailLength < tail.length) {
+            tail.shift()
+        }
+        context.fillStyle = 'red'
+        context.fillRect(foodX, foodY, 20, 20)
+    }
+    let keydown = (event) => {
+        switch (event.keyCode) {
+            case 37:
+                snakeDY = 0
+                snakeDX = -1
+                break
+            case 38:
+                snakeDY = -1
+                snakeDX = 0
+                break
+            case 39:
+                snakeDY = 0
+                snakeDX = 1
+                break
+            case 40:
+                snakeDY = 1
+                snakeDX = 0
+                break
+        }
+    }
+</script>
