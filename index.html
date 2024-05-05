@@ -1,50 +1,75 @@
-<canvas height='400' id='canvas' width='400' />
-<script>
-    window.onload = () => {
-        canvas = document.getElementById('canvas')
-        context = canvas.getContext('2d')
-        document.addEventListener('keydown', keydown)
-        setInterval(game, 1000 / 15)
-    }
-    let snakeY = snakeX = 100
-    let snakeDY = snakeDX = 0
-    let foodY, foodX = 200
-    let tail = []
-    let tailLength = 5
-    let game = () => {
-        snakeY += snakeDY
-        snakeX += snakeDX
-        context.fillStyle = 'white'
-        context.fillRect(0, 0, canvas.width, canvas.height)
-        context.fillStyle = 'lime'
-        tail.forEach(pos => {
-            context.fillRect(pos.x, pos.y, 20, 20)
-        })
-        tail.push({ y: snakeY, x: snakeX })
-        while (tailLength < tail.length) {
-            tail.shift()
+<body>
+    <div style='display: flex; height: 100%; justify-content: center;'><canvas height='400' id='canvas' width='400' /></div>
+    <script>
+        let height = 400
+        let width = 400
+        let pxLen = 20
+        window.onload = () => {
+            canvas = document.getElementById('canvas')
+            context = canvas.getContext('2d')
+            setInterval(loop, 1000 / 10)
+            document.addEventListener('keydown', keydown)
         }
-        context.fillStyle = 'red'
-        context.fillRect(foodX, foodY, 20, 20)
-    }
-    let keydown = (event) => {
-        switch (event.keyCode) {
-            case 37:
-                snakeDY = 0
-                snakeDX = -1
-                break
-            case 38:
-                snakeDY = -1
-                snakeDX = 0
-                break
-            case 39:
-                snakeDY = 0
-                snakeDX = 1
-                break
-            case 40:
-                snakeDY = 1
-                snakeDX = 0
-                break
+        let playerY = 200
+        let playerX = 200
+        let playerDY = 0
+        let playerDX = 0
+        let tail = []
+        let tailLength = 5
+        let food = { y: 100, x: 100 }
+        let reset = () => {
+            playerY = 200
+            playerX = 200
+            playerDY = 0
+            playerDX = 0
+            tail = []
+            tailLength = 5
         }
-    }
-</script>
+        let loop = () => {
+            context.fillStyle = 'black'
+            context.fillRect(0, 0, canvas.width, canvas.height)
+
+            playerY += playerDY
+            playerX += playerDX
+            tail.push({ y: playerY, x: playerX })
+            while (tailLength < tail.length) {
+                tail.shift()
+            }
+            if (playerY < 0 || canvas.height <= playerY || playerX < 0 || canvas.width <= playerX) {
+                reset()
+            }
+            context.fillStyle = 'lime'
+            tail.forEach((pos, i) => {
+                context.fillRect(pos.x, pos.y, pxLen, pxLen)
+                if (i !== tail.length - 1 && pos.y === playerY && pos.x === playerX && (playerDY || playerDX)) {
+                    reset()
+                }
+                if (pos.y === food.y && pos.x === food.x) {
+                    tailLength += 3
+                    food = { y: Math.floor(Math.random() * pxLen) * pxLen, x: Math.floor(Math.random() * pxLen) * pxLen }
+                }
+            })
+            context.fillStyle = 'orange'
+            context.fillRect(food.x, food.y, pxLen, pxLen)
+        }
+        canMove = true
+        let keydown = (event) => {
+            if (!canMove) return
+            if (event.key === 'ArrowUp' && playerDY !== pxLen) {
+                playerDY = -pxLen
+                playerDX = 0
+            } else if (event.key === 'ArrowDown' && playerDY !== -pxLen) {
+                playerDY = pxLen
+                playerDX = 0
+            } else if (event.key === 'ArrowLeft' && playerDX !== pxLen) {
+                playerDY = 0
+                playerDX = -pxLen
+            } else if (event.key === 'ArrowRight' && playerDX !== -pxLen) {
+                playerDY = 0
+                playerDX = pxLen
+            }
+            canMove = false
+            setTimeout(() => canMove = true, 1000 / 10);
+        }
+    </script>
+</body>
