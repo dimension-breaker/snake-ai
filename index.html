@@ -1,4 +1,3 @@
-<!DOCTYPE HTML>
 <canvas height='400' id='canvas' width='400' />
 <script>
     window.onload = () => {
@@ -15,7 +14,7 @@
     let game = () => {
         snakeY += snakeDY
         snakeX += snakeDX
-        context.fillStyle = 'black'
+        context.fillStyle = 'white'
         context.fillRect(0, 0, canvas.width, canvas.height)
         context.fillStyle = 'lime'
         tail.forEach(pos => {
