@@ -8,8 +8,8 @@
         }
         let bot0 = {
             color: 'red',
-            currentKey: undefined,
-            isEnabled: false,
+            isEnabled: true,
+            path: [],
             pos: [{ x: 200, y: 200 }],
             size: 4
         }
@@ -19,7 +19,7 @@
             color: 'green',
             currentKey: undefined,
             desiredKey: undefined,
-            isEnabled: true,
+            isEnabled: false,
             pos: [{ x: 600, y: 600 }],
             size: 4
         }
@@ -42,15 +42,36 @@
             if (bot0.isEnabled) {
                 context.fillStyle = bot0.color
                 bot0.pos.forEach(pos => context.fillRect(pos.x, pos.y, arena.pxLen, arena.pxLen))
+                if (!bot0.path.length) {
+                    bot0.path = bot0.path.concat([
+                        { x: 300, y: 320},
+                        { x: 300, y: 340},
+                        { x: 280, y: 340},
+                        { x: 260, y: 340},
+                        { x: 260, y: 320},
+                        { x: 260, y: 300},
+                        { x: 280, y: 300},
+                        { x: 300, y: 300}
+                    ])
+                }
                 let x = bot0.pos[0]?.x
                 let y = bot0.pos[0]?.y
+                let pos = bot0.path.shift()
+                x = pos?.x
+                y = pos?.y
                 bot0.pos.unshift({ x, y })
                 while (bot0.size < bot0.pos.length) {
                     bot0.pos.pop()
                 }
                 bot0.pos.forEach((pos, i) => {
-                    if (pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === bot0.pos[0]?.x && pos.y === bot0.pos[0]?.y && bot0.currentKey)) {
-                        bot0.pos = []
+                    if (pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === bot0.pos[0]?.x && pos.y === bot0.pos[0]?.y && bot0.path)) {
+                        let bot0 = {
+                            color: 'red',
+                            isEnabled: true,
+                            path: [],
+                            pos: [{ x: 200, y: 200 }],
+                            size: 4
+                        }
                     }
                     if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
                         bot0.size += 4
