@@ -9,39 +9,43 @@
             time: 66
         }
         let player0 = {
-            calcPath: calcLoopPath,
+            calcPath: calcAStar,
             color: 'red',
             length: 4,
             path: [],
-            pos: [{ x: 200, y: 200 }]
-            // pos: []
+            pos: [{ x: 200, y: 200 }],
+            // pos: [],
+            seen: []
         }
         let player1 = {
             calcPath: calcLoopPath,
             color: 'orange',
             length: 4,
             path: [],
-            // pos: [{ x: 600, y: 200 }]
-            pos: []
+            // pos: [{ x: 600, y: 200 }],
+            pos: [],
+            seen: []
         }
         let player2 = {
             calcPath: calcLoopPath,
             color: 'yellow',
             length: 4,
             path: [],
-            // pos: [{ x: 200, y: 600 }]
-            pos: []
+            // pos: [{ x: 200, y: 600 }],
+            pos: [],
+            seen: []
         }
         let player3 = {
             calcPath: calcControllerPath,
             color: 'green',
             length: 4,
             path: [],
-            // pos: [{ x: 600, y: 600 }]
-            pos: []
+            // pos: [{ x: 600, y: 600 }],
+            pos: [],
+            seen: []
         }
         let food = {
-            color: 'cyan',
+            color: 'cyan'
         }
         let walls = undefined
         let portals = undefined
@@ -56,7 +60,7 @@
             context.fillStyle = arena.color
             context.fillRect(0, 0, canvas.width, canvas.height)
 
-            new Array(player0, player1, player2, player3).forEach(player => {
+            new Array(player0, player1, player2, player3).filter(player => player.pos.length).forEach(player => {
                 context.fillStyle = player.color
                 player.pos.forEach(pos => context.fillRect(pos.x, pos.y, arena.pxLen, arena.pxLen))
                 player.calcPath?.(player)
@@ -74,6 +78,8 @@
                         food.pos = undefined
                     }
                 })
+                context.fillStyle = 'rgba(255, 255, 255, 0.5)'
+                player.seen.forEach(pos => context.fillRect(Number(pos.split(', ')[0]), Number(pos.split(', ')[1]), arena.pxLen, arena.pxLen))
             })
 
             context.fillStyle = food.color
@@ -99,6 +105,62 @@
                 { x, y: y + arena.pxLen },
                 { x, y }
             ])
+        }
+        function calcAStar(player) {
+            if (!food.pos || player.path.length) return
+            let getNeighbors = (vertex) => {
+                let neighbors = [
+                    { x: vertex.x, y: vertex.y - arena.pxLen },
+                    { x: vertex.x, y: vertex.y + arena.pxLen },
+                    { x: vertex.x - arena.pxLen, y: vertex.y },
+                    { x: vertex.x + arena.pxLen, y: vertex.y },
+                ]
+                neighbors = neighbors.filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.pos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)).map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - food.pos.x) ** 2 + (neighbor.y - food.pos.y) ** 2) }))
+                return neighbors
+            }
+            let vertex = { ...player.pos[0], eval: Number.MAX_VALUE }
+            let deque = [vertex]
+            let parents = { [`${vertex.x}, ${vertex.y}`]: `${vertex.x}, ${vertex.y}` }
+            let _iter = 0
+
+            while (deque.length && _iter < 2048) {
+                let bestEval = Number.MAX_VALUE
+                let bestEvalIndex = undefined
+                deque.forEach((vertex, i) => {
+                    if (vertex.eval < bestEval) {
+                        bestEval = vertex.eval
+                        bestEvalIndex = i
+                    }
+                })
+                let vertex = deque.splice(bestEvalIndex, 1)[0]
+
+                if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
+                    break
+                }
+
+                getNeighbors(vertex).forEach(neighbor => {
+                    if (!parents[`${neighbor.x}, ${neighbor.y}`]) {
+                        parents[`${neighbor.x}, ${neighbor.y}`] = `${vertex.x}, ${vertex.y}`
+                        deque.push(neighbor)
+                    }
+                })
+                _iter += 1
+            }
+
+            path = []
+            vertex = `${food.pos.x}, ${food.pos.y}`
+            while (vertex) {
+                path.unshift({ x: Number(vertex.split(', ')[0]), y: Number(vertex.split(', ')[1]) })
+                if (parents[vertex] === vertex) {
+                    break
+                }
+                vertex = parents[vertex]
+            }
+            if (path[0].x === player.pos[0].x && path[0].y === player.pos[0].y) {
+                path.shift()
+                player.path = path
+            }
+            player.seen = Object.keys(parents)
         }
         function calcControllerPath(player) {
             if (arena.desiredKey === 'ArrowUp' && arena.acceptedKey?.id !== 'ArrowDown') {
