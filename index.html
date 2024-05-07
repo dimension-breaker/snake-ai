@@ -2,26 +2,43 @@
     <div style='display: flex; height: 100%; justify-content: center;'><canvas height='800' id='canvas' width='800' /></div>
     <script>
         let arena = {
+            acceptedKey: undefined,
             color: 'black',
+            desiredKey: undefined,
             pxLen: 20,
             time: 66
         }
-        let bot0 = {
+        let player0 = {
+            calcPath: calcLoopPath,
             color: 'red',
-            isEnabled: true,
+            length: 4,
             path: [],
-            pos: [{ x: 200, y: 200 }],
-            size: 4
+            pos: [{ x: 200, y: 200 }]
+            // pos: []
         }
-        let bot1 = undefined
-        let bot2 = undefined
-        let player = {
+        let player1 = {
+            calcPath: calcLoopPath,
+            color: 'orange',
+            length: 4,
+            path: [],
+            // pos: [{ x: 600, y: 200 }]
+            pos: []
+        }
+        let player2 = {
+            calcPath: calcLoopPath,
+            color: 'yellow',
+            length: 4,
+            path: [],
+            // pos: [{ x: 200, y: 600 }]
+            pos: []
+        }
+        let player3 = {
+            calcPath: calcControllerPath,
             color: 'green',
-            currentKey: undefined,
-            desiredKey: undefined,
-            isEnabled: false,
-            pos: [{ x: 600, y: 600 }],
-            size: 4
+            length: 4,
+            path: [],
+            pos: [{ x: 600, y: 600 }]
+            // pos: []
         }
         let food = {
             color: 'cyan',
@@ -33,89 +50,31 @@
             canvas = document.getElementById('canvas')
             context = canvas.getContext('2d')
             setInterval(loop, arena.time)
-            document.addEventListener('keydown', event => (player.desiredKey = event.key))
+            document.addEventListener('keydown', event => (arena.desiredKey = event.key))
         }
         let loop = () => {
             context.fillStyle = arena.color
             context.fillRect(0, 0, canvas.width, canvas.height)
 
-            if (bot0.isEnabled) {
-                context.fillStyle = bot0.color
-                bot0.pos.forEach(pos => context.fillRect(pos.x, pos.y, arena.pxLen, arena.pxLen))
-                if (!bot0.path.length) {
-                    bot0.path = bot0.path.concat([
-                        { x: 300, y: 320},
-                        { x: 300, y: 340},
-                        { x: 280, y: 340},
-                        { x: 260, y: 340},
-                        { x: 260, y: 320},
-                        { x: 260, y: 300},
-                        { x: 280, y: 300},
-                        { x: 300, y: 300}
-                    ])
-                }
-                let x = bot0.pos[0]?.x
-                let y = bot0.pos[0]?.y
-                let pos = bot0.path.shift()
-                x = pos?.x
-                y = pos?.y
-                bot0.pos.unshift({ x, y })
-                while (bot0.size < bot0.pos.length) {
-                    bot0.pos.pop()
-                }
-                bot0.pos.forEach((pos, i) => {
-                    if (pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === bot0.pos[0]?.x && pos.y === bot0.pos[0]?.y && bot0.path)) {
-                        let bot0 = {
-                            color: 'red',
-                            isEnabled: true,
-                            path: [],
-                            pos: [{ x: 200, y: 200 }],
-                            size: 4
-                        }
-                    }
-                    if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
-                        bot0.size += 4
-                        food.pos = undefined
-                    }
-                })
-            }
-            if (player.isEnabled) {
+            new Array(player0, player1, player2, player3).forEach(player => {
                 context.fillStyle = player.color
                 player.pos.forEach(pos => context.fillRect(pos.x, pos.y, arena.pxLen, arena.pxLen))
-                if (player.desiredKey === 'ArrowUp' && player.currentKey !== 'ArrowDown') {
-                    player.currentKey = player.desiredKey
-                } else if (player.desiredKey === 'ArrowDown' && player.currentKey !== 'ArrowUp') {
-                    player.currentKey = player.desiredKey
-                } else if (player.desiredKey === 'ArrowLeft' && player.currentKey !== 'ArrowRight') {
-                    player.currentKey = player.desiredKey
-                } else if (player.desiredKey === 'ArrowRight' && player.currentKey !== 'ArrowLeft') {
-                    player.currentKey = player.desiredKey
-                }
-                let x = player.pos[0]?.x
-                let y = player.pos[0]?.y
-                if (player.currentKey === 'ArrowUp') {
-                    y -= arena.pxLen
-                } else if (player.currentKey === 'ArrowDown') {
-                    y += arena.pxLen
-                } else if (player.currentKey === 'ArrowLeft') {
-                    x -= arena.pxLen
-                } else if (player.currentKey === 'ArrowRight') {
-                    x += arena.pxLen
-                }
-                player.pos.unshift({ x, y })
-                while (player.size < player.pos.length) {
+                player.calcPath?.(player)
+                let pos = player.path.shift()
+                pos && player.pos.unshift({ x: pos.x, y: pos.y })
+                while (player.length < player.pos.length) {
                     player.pos.pop()
                 }
                 player.pos.forEach((pos, i) => {
-                    if (pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === player.pos[0]?.x && pos.y === player.pos[0]?.y && player.currentKey)) {
+                    if (pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === player.pos[0]?.x && pos.y === player.pos[0]?.y)) {
                         player.pos = []
                     }
                     if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
-                        player.size += 4
+                        player.length += 4
                         food.pos = undefined
                     }
                 })
-            }
+            })
 
             context.fillStyle = food.color
             context.fillRect(food.pos?.x, food.pos?.y, arena.pxLen, arena.pxLen)
@@ -124,6 +83,35 @@
                     x: Math.floor(Math.random() * canvas.width / arena.pxLen) * arena.pxLen,
                     y: Math.floor(Math.random() * canvas.height / arena.pxLen) * arena.pxLen
                 }
+            }
+        }
+        function calcLoopPath(player) {
+            if (!player.pos.length || player.path.length) return
+            let x = player.pos[0].x
+            let y = player.pos[0].y
+            player.path = player.path.concat([
+                { x: x + arena.pxLen, y },
+                { x: x + 2 * arena.pxLen, y },
+                { x: x + 2 * arena.pxLen, y: y + arena.pxLen },
+                { x: x + 2 * arena.pxLen, y: y + 2 * arena.pxLen },
+                { x: x + arena.pxLen, y: y + 2 * arena.pxLen },
+                { x, y: y + 2 * arena.pxLen },
+                { x, y: y + arena.pxLen },
+                { x, y }
+            ])
+        }
+        function calcControllerPath(player) {
+            if (arena.desiredKey === 'ArrowUp' && arena.acceptedKey?.id !== 'ArrowDown') {
+                arena.acceptedKey = { id: arena.desiredKey, x: 0, y: -arena.pxLen }
+            } else if (arena.desiredKey === 'ArrowDown' && arena.acceptedKey?.id !== 'ArrowUp') {
+                arena.acceptedKey = { id: arena.desiredKey, x: 0, y: arena.pxLen }
+            } else if (arena.desiredKey === 'ArrowLeft' && arena.acceptedKey?.id !== 'ArrowRight') {
+                arena.acceptedKey = { id: arena.desiredKey, x: -arena.pxLen, y: 0 }
+            } else if (arena.desiredKey === 'ArrowRight' && arena.acceptedKey?.id !== 'ArrowLeft') {
+                arena.acceptedKey = { id: arena.desiredKey, x: arena.pxLen, y: 0 }
+            }
+            if (player.pos.length && arena.acceptedKey) {
+                player.path.push({ x: player.pos[0]?.x + arena.acceptedKey.x, y: player.pos[0]?.y + arena.acceptedKey.y })
             }
         }
     </script>
