@@ -8,8 +8,10 @@
         }
         let bot0 = {
             color: 'red',
+            currentKey: undefined,
+            isEnabled: false,
             pos: [{ x: 200, y: 200 }],
-            tailLen: 4
+            size: 4
         }
         let bot1 = undefined
         let bot2 = undefined
@@ -17,11 +19,12 @@
             color: 'green',
             currentKey: undefined,
             desiredKey: undefined,
+            isEnabled: true,
             pos: [{ x: 600, y: 600 }],
             size: 4
         }
         let food = {
-            color: 'cyan'
+            color: 'cyan',
         }
         let walls = undefined
         let portals = undefined
@@ -36,47 +39,62 @@
             context.fillStyle = arena.color
             context.fillRect(0, 0, canvas.width, canvas.height)
 
-            context.fillStyle = player.color
-            player.pos.forEach(pos => context.fillRect(pos.x, pos.y, arena.pxLen, arena.pxLen))
-            if (player.desiredKey === 'ArrowUp' && player.currentKey !== 'ArrowDown') {
-                player.currentKey = player.desiredKey
-            } else if (player.desiredKey === 'ArrowDown' && player.currentKey !== 'ArrowUp') {
-                player.currentKey = player.desiredKey
-            } else if (player.desiredKey === 'ArrowLeft' && player.currentKey !== 'ArrowRight') {
-                player.currentKey = player.desiredKey
-            } else if (player.desiredKey === 'ArrowRight' && player.currentKey !== 'ArrowLeft') {
-                player.currentKey = player.desiredKey
-            }
-            let x = player.pos[0]?.x
-            let y = player.pos[0]?.y
-            if (player.currentKey === 'ArrowUp') {
-                y -= arena.pxLen
-            } else if (player.currentKey === 'ArrowDown') {
-                y += arena.pxLen
-            } else if (player.currentKey === 'ArrowLeft') {
-                x -= arena.pxLen
-            } else if (player.currentKey === 'ArrowRight') {
-                x += arena.pxLen
-            }
-            player.pos.unshift({ x, y })
-            while (player.size < player.pos.length) {
-                player.pos.pop()
-            }
-            player.pos.forEach((pos, i) => {
-                if (pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === player.pos[0].x && pos.y === player.pos[0].y && player.currentKey)) {
-                    player = {
-                        color: 'green',
-                        currentKey: undefined,
-                        desiredKey: undefined,
-                        pos: [{ x: 600, y: 600 }],
-                        size: 4
+            if (bot0.isEnabled) {
+                context.fillStyle = bot0.color
+                bot0.pos.forEach(pos => context.fillRect(pos.x, pos.y, arena.pxLen, arena.pxLen))
+                let x = bot0.pos[0]?.x
+                let y = bot0.pos[0]?.y
+                bot0.pos.unshift({ x, y })
+                while (bot0.size < bot0.pos.length) {
+                    bot0.pos.pop()
+                }
+                bot0.pos.forEach((pos, i) => {
+                    if (pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === bot0.pos[0]?.x && pos.y === bot0.pos[0]?.y && bot0.currentKey)) {
+                        bot0.pos = []
                     }
+                    if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
+                        bot0.size += 4
+                        food.pos = undefined
+                    }
+                })
+            }
+            if (player.isEnabled) {
+                context.fillStyle = player.color
+                player.pos.forEach(pos => context.fillRect(pos.x, pos.y, arena.pxLen, arena.pxLen))
+                if (player.desiredKey === 'ArrowUp' && player.currentKey !== 'ArrowDown') {
+                    player.currentKey = player.desiredKey
+                } else if (player.desiredKey === 'ArrowDown' && player.currentKey !== 'ArrowUp') {
+                    player.currentKey = player.desiredKey
+                } else if (player.desiredKey === 'ArrowLeft' && player.currentKey !== 'ArrowRight') {
+                    player.currentKey = player.desiredKey
+                } else if (player.desiredKey === 'ArrowRight' && player.currentKey !== 'ArrowLeft') {
+                    player.currentKey = player.desiredKey
                 }
-                if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
-                    player.size += 4
-                    food.pos = undefined
+                let x = player.pos[0]?.x
+                let y = player.pos[0]?.y
+                if (player.currentKey === 'ArrowUp') {
+                    y -= arena.pxLen
+                } else if (player.currentKey === 'ArrowDown') {
+                    y += arena.pxLen
+                } else if (player.currentKey === 'ArrowLeft') {
+                    x -= arena.pxLen
+                } else if (player.currentKey === 'ArrowRight') {
+                    x += arena.pxLen
                 }
-            })
+                player.pos.unshift({ x, y })
+                while (player.size < player.pos.length) {
+                    player.pos.pop()
+                }
+                player.pos.forEach((pos, i) => {
+                    if (pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === player.pos[0]?.x && pos.y === player.pos[0]?.y && player.currentKey)) {
+                        player.pos = []
+                    }
+                    if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
+                        player.size += 4
+                        food.pos = undefined
+                    }
+                })
+            }
 
             context.fillStyle = food.color
             context.fillRect(food.pos?.x, food.pos?.y, arena.pxLen, arena.pxLen)
