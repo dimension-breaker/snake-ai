@@ -1,75 +1,91 @@
 <body>
-    <div style='display: flex; height: 100%; justify-content: center;'><canvas height='400' id='canvas' width='400' /></div>
+    <div style='display: flex; height: 100%; justify-content: center;'><canvas height='800' id='canvas' width='800' /></div>
     <script>
-        let height = 400
-        let width = 400
-        let pxLen = 20
+        let arena = {
+            color: 'black',
+            pxLen: 20,
+            time: 66
+        }
+        let bot0 = {
+            color: 'red',
+            pos: [{ x: 200, y: 200 }],
+            tailLen: 4
+        }
+        let bot1 = undefined
+        let bot2 = undefined
+        let player = {
+            color: 'green',
+            currentKey: undefined,
+            desiredKey: undefined,
+            pos: [{ x: 600, y: 600 }],
+            size: 4
+        }
+        let food = {
+            color: 'cyan'
+        }
+        let walls = undefined
+        let portals = undefined
+
         window.onload = () => {
             canvas = document.getElementById('canvas')
             context = canvas.getContext('2d')
-            setInterval(loop, 1000 / 10)
-            document.addEventListener('keydown', keydown)
-        }
-        let playerY = 200
-        let playerX = 200
-        let playerDY = 0
-        let playerDX = 0
-        let tail = []
-        let tailLength = 5
-        let food = { y: 100, x: 100 }
-        let reset = () => {
-            playerY = 200
-            playerX = 200
-            playerDY = 0
-            playerDX = 0
-            tail = []
-            tailLength = 5
+            setInterval(loop, arena.time)
+            document.addEventListener('keydown', event => (player.desiredKey = event.key))
         }
         let loop = () => {
-            context.fillStyle = 'black'
+            context.fillStyle = arena.color
             context.fillRect(0, 0, canvas.width, canvas.height)
 
-            playerY += playerDY
-            playerX += playerDX
-            tail.push({ y: playerY, x: playerX })
-            while (tailLength < tail.length) {
-                tail.shift()
+            context.fillStyle = player.color
+            player.pos.forEach(pos => context.fillRect(pos.x, pos.y, arena.pxLen, arena.pxLen))
+            if (player.desiredKey === 'ArrowUp' && player.currentKey !== 'ArrowDown') {
+                player.currentKey = player.desiredKey
+            } else if (player.desiredKey === 'ArrowDown' && player.currentKey !== 'ArrowUp') {
+                player.currentKey = player.desiredKey
+            } else if (player.desiredKey === 'ArrowLeft' && player.currentKey !== 'ArrowRight') {
+                player.currentKey = player.desiredKey
+            } else if (player.desiredKey === 'ArrowRight' && player.currentKey !== 'ArrowLeft') {
+                player.currentKey = player.desiredKey
             }
-            if (playerY < 0 || canvas.height <= playerY || playerX < 0 || canvas.width <= playerX) {
-                reset()
+            let x = player.pos[0]?.x
+            let y = player.pos[0]?.y
+            if (player.currentKey === 'ArrowUp') {
+                y -= arena.pxLen
+            } else if (player.currentKey === 'ArrowDown') {
+                y += arena.pxLen
+            } else if (player.currentKey === 'ArrowLeft') {
+                x -= arena.pxLen
+            } else if (player.currentKey === 'ArrowRight') {
+                x += arena.pxLen
             }
-            context.fillStyle = 'lime'
-            tail.forEach((pos, i) => {
-                context.fillRect(pos.x, pos.y, pxLen, pxLen)
-                if (i !== tail.length - 1 && pos.y === playerY && pos.x === playerX && (playerDY || playerDX)) {
-                    reset()
+            player.pos.unshift({ x, y })
+            while (player.size < player.pos.length) {
+                player.pos.pop()
+            }
+            player.pos.forEach((pos, i) => {
+                if (pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === player.pos[0].x && pos.y === player.pos[0].y && player.currentKey)) {
+                    player = {
+                        color: 'green',
+                        currentKey: undefined,
+                        desiredKey: undefined,
+                        pos: [{ x: 600, y: 600 }],
+                        size: 4
+                    }
                 }
-                if (pos.y === food.y && pos.x === food.x) {
-                    tailLength += 3
-                    food = { y: Math.floor(Math.random() * pxLen) * pxLen, x: Math.floor(Math.random() * pxLen) * pxLen }
+                if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
+                    player.size += 4
+                    food.pos = undefined
                 }
             })
-            context.fillStyle = 'orange'
-            context.fillRect(food.x, food.y, pxLen, pxLen)
-        }
-        canMove = true
-        let keydown = (event) => {
-            if (!canMove) return
-            if (event.key === 'ArrowUp' && playerDY !== pxLen) {
-                playerDY = -pxLen
-                playerDX = 0
-            } else if (event.key === 'ArrowDown' && playerDY !== -pxLen) {
-                playerDY = pxLen
-                playerDX = 0
-            } else if (event.key === 'ArrowLeft' && playerDX !== pxLen) {
-                playerDY = 0
-                playerDX = -pxLen
-            } else if (event.key === 'ArrowRight' && playerDX !== -pxLen) {
-                playerDY = 0
-                playerDX = pxLen
+
+            context.fillStyle = food.color
+            context.fillRect(food.pos?.x, food.pos?.y, arena.pxLen, arena.pxLen)
+            if (!food.pos) {
+                food.pos = {
+                    x: Math.floor(Math.random() * canvas.width / arena.pxLen) * arena.pxLen,
+                    y: Math.floor(Math.random() * canvas.height / arena.pxLen) * arena.pxLen
+                }
             }
-            canMove = false
-            setTimeout(() => canMove = true, 1000 / 10);
         }
     </script>
 </body>
