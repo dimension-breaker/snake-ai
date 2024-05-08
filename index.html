@@ -91,6 +91,20 @@
                 }
             }
         }
+        function calcControllerPath(player) {
+            if (arena.desiredKey === 'ArrowUp' && arena.acceptedKey?.id !== 'ArrowDown') {
+                arena.acceptedKey = { id: arena.desiredKey, x: 0, y: -arena.pxLen }
+            } else if (arena.desiredKey === 'ArrowDown' && arena.acceptedKey?.id !== 'ArrowUp') {
+                arena.acceptedKey = { id: arena.desiredKey, x: 0, y: arena.pxLen }
+            } else if (arena.desiredKey === 'ArrowLeft' && arena.acceptedKey?.id !== 'ArrowRight') {
+                arena.acceptedKey = { id: arena.desiredKey, x: -arena.pxLen, y: 0 }
+            } else if (arena.desiredKey === 'ArrowRight' && arena.acceptedKey?.id !== 'ArrowLeft') {
+                arena.acceptedKey = { id: arena.desiredKey, x: arena.pxLen, y: 0 }
+            }
+            if (player.pos.length && arena.acceptedKey) {
+                player.path.push({ x: player.pos[0]?.x + arena.acceptedKey.x, y: player.pos[0]?.y + arena.acceptedKey.y })
+            }
+        }
         function calcLoopPath(player) {
             if (player.path.length) return
             let x = player.pos[0].x
@@ -163,20 +177,6 @@
                 player.path = path.slice(1)
             }
             player.seen = Object.keys(parents)
-        }
-        function calcControllerPath(player) {
-            if (arena.desiredKey === 'ArrowUp' && arena.acceptedKey?.id !== 'ArrowDown') {
-                arena.acceptedKey = { id: arena.desiredKey, x: 0, y: -arena.pxLen }
-            } else if (arena.desiredKey === 'ArrowDown' && arena.acceptedKey?.id !== 'ArrowUp') {
-                arena.acceptedKey = { id: arena.desiredKey, x: 0, y: arena.pxLen }
-            } else if (arena.desiredKey === 'ArrowLeft' && arena.acceptedKey?.id !== 'ArrowRight') {
-                arena.acceptedKey = { id: arena.desiredKey, x: -arena.pxLen, y: 0 }
-            } else if (arena.desiredKey === 'ArrowRight' && arena.acceptedKey?.id !== 'ArrowLeft') {
-                arena.acceptedKey = { id: arena.desiredKey, x: arena.pxLen, y: 0 }
-            }
-            if (player.pos.length && arena.acceptedKey) {
-                player.path.push({ x: player.pos[0]?.x + arena.acceptedKey.x, y: player.pos[0]?.y + arena.acceptedKey.y })
-            }
         }
     </script>
 </body>
