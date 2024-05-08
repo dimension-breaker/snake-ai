@@ -4,3 +4,4 @@ TODO
 add deque
 add heap
 a* just gives up
+add seen color

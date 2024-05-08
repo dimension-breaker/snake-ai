@@ -1,5 +1,5 @@
 <body>
-    <div style='display: flex; height: 100%; justify-content: center;'><canvas height='800' id='canvas' width='800' /></div>
+    <div style='display: flex; height: 100%; justify-content: center;'><canvas height='400' id='canvas' width='400' /></div>
     <script>
         let arena = {
             acceptedKey: undefined,
@@ -13,7 +13,7 @@
             color: 'red',
             length: 4,
             path: [],
-            pos: [{ x: 200, y: 200 }],
+            pos: [{ x: canvas.width / 4, y: canvas.height / 4 }],
             // pos: [],
             seen: []
         }
@@ -22,7 +22,7 @@
             color: 'orange',
             length: 4,
             path: [],
-            // pos: [{ x: 600, y: 200 }],
+            // pos: [{ x: canvas.width * 3 / 4, y: canvas.height / 4 }],
             pos: [],
             seen: []
         }
@@ -31,7 +31,7 @@
             color: 'yellow',
             length: 4,
             path: [],
-            // pos: [{ x: 200, y: 600 }],
+            // pos: [{ x: canvas.width / 4, y: canvas.height * 3 / 4 }],
             pos: [],
             seen: []
         }
@@ -40,7 +40,7 @@
             color: 'green',
             length: 4,
             path: [],
-            // pos: [{ x: 600, y: 600 }],
+            // pos: [{ x: canvas.width * 3 / 4, y: canvas.height * 3 / 4 }],
             pos: [],
             seen: []
         }
@@ -78,7 +78,7 @@
                         food.pos = undefined
                     }
                 })
-                context.fillStyle = 'rgba(255, 0, 0, 0.5)'
+                context.fillStyle = 'rgba(255, 0, 0, 0.25)'
                 player.seen.forEach(pos => context.fillRect(Number(pos.split(', ')[0]), Number(pos.split(', ')[1]), arena.pxLen, arena.pxLen))
             })
 
@@ -133,7 +133,7 @@
                 neighbors = neighbors.filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !playerPos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)).map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - food.pos.x) ** 2 + (neighbor.y - food.pos.y) ** 2) }))
                 return neighbors
             }
-            let vertex = { ...player.pos[0], eval: Number.MAX_VALUE }
+            let vertex = { ...player.pos[0], eval: Math.sqrt((player.pos[0].x - food.pos.x) ** 2 + (player.pos[0].y - food.pos.y) ** 2) }
             let deque = [vertex]
             let parents = { [`${vertex.x}, ${vertex.y}`]: `${vertex.x}, ${vertex.y}` }
             let depths = { [`${vertex.x}, ${vertex.y}`]: 0 }
@@ -148,7 +148,7 @@
                         bestEvalIndex = i
                     }
                 })
-                let vertex = deque.splice(bestEvalIndex, 1)[0]
+                vertex = deque.splice(bestEvalIndex, 1)[0]
 
                 if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
                     break
@@ -177,6 +177,72 @@
                 player.path = path.slice(1)
             }
             player.seen = Object.keys(parents)
+        }
+        function calcLongestPath(player) {
+            if (player.path.length || !food.pos || player.pos.find(pos => pos.x === food.pos.x && pos.y === food.pos.y)) return
+            let getNeighbors = (vertex, depth) => {
+                let neighbors = [
+                    { x: vertex.x, y: vertex.y - arena.pxLen },
+                    { x: vertex.x, y: vertex.y + arena.pxLen },
+                    { x: vertex.x - arena.pxLen, y: vertex.y },
+                    { x: vertex.x + arena.pxLen, y: vertex.y },
+                ]
+                playerPos = 0 < depth - (player.length - player.pos.length) ? player.pos.slice(0, -(depth - (player.length - player.pos.length))) : player.pos
+                neighbors = neighbors.filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !playerPos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)).map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - food.pos.x) ** 2 + (neighbor.y - food.pos.y) ** 2) }))
+                // console.log(JSON.stringify(neighbors))
+                return neighbors
+            }
+            let vertex = { ...player.pos[0], eval: Math.sqrt((player.pos[0].x - food.pos.x) ** 2 + (player.pos[0].y - food.pos.y) ** 2) }
+            let deque = [vertex]
+            let parents = { [`${vertex.x}, ${vertex.y}`]: `${vertex.x}, ${vertex.y}` }
+            let depths = { [`${vertex.x}, ${vertex.y}`]: 0 }
+            let _iter = 0
+
+            while (deque.length && _iter < 2048) {
+                let bestDepth = Number.MIN_VALUE
+                deque.forEach((vertex, i) => {
+                    if (bestDepth < depths[`${vertex.x}, ${vertex.y}`]) {
+                        bestDepth = depths[`${vertex.x}, ${vertex.y}`]
+                    }
+                })
+                let bestEval = Number.MIN_VALUE
+                let bestEvalIndex = undefined
+                deque.forEach((vertex, i) => {
+                    if (bestEval < vertex.eval && depths[`${vertex.x}, ${vertex.y}`] === bestDepth) {
+                        bestEval = vertex.eval
+                        bestEvalIndex = i
+                    }
+                })
+                vertex = deque.splice(bestEvalIndex, 1)[0]
+                // console.log(JSON.stringify(vertex))
+
+                if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
+                    break
+                }
+
+                getNeighbors(vertex, depths[`${vertex.x}, ${vertex.y}`]).forEach(neighbor => {
+                    if (!parents[`${neighbor.x}, ${neighbor.y}`]) {
+                        deque.push(neighbor)
+                        parents[`${neighbor.x}, ${neighbor.y}`] = `${vertex.x}, ${vertex.y}`
+                        depths[`${neighbor.x}, ${neighbor.y}`] = depths[`${vertex.x}, ${vertex.y}`] + 1
+                    }
+                })
+                _iter += 1
+            }
+
+            path = []
+            vertex = `${food.pos.x}, ${food.pos.y}`
+            while (vertex) {
+                path.unshift({ x: Number(vertex.split(', ')[0]), y: Number(vertex.split(', ')[1]) })
+                if (parents[vertex] === vertex) {
+                    break
+                }
+                vertex = parents[vertex]
+            }
+            if (path[0].x === player.pos[0].x && path[0].y === player.pos[0].y) {
+                player.path = path.slice(1)
+            }
+            // player.seen = Object.keys(parents)
         }
     </script>
 </body>
