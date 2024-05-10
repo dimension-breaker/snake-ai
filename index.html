@@ -3,14 +3,14 @@
     <script>
         let arena = {
             acceptedKey: undefined,
-            color: 'black',
+            color: [0, 0, 0],
             desiredKey: undefined,
             pxLen: 20,
             time: 5
         }
         let player0 = {
             calcPath: calcAStar,
-            color: 'red',
+            color: [153, 0, 0],
             length: 4,
             path: [],
             // pos: [{ x: canvas.width / 4, y: canvas.height / 4 }],
@@ -18,15 +18,15 @@
         }
         let player1 = {
             calcPath: calcLongestPath,
-            color: 'orange',
+            color: [255, 153, 51],
             length: 4,
             path: [],
             pos: [{ x: canvas.width * 3 / 4, y: canvas.height / 4 }],
             seen: []
         }
         let player2 = {
-            calcPath: calcLoopPath,
-            color: 'yellow',
+            calcPath: calcAStar,
+            color: [255, 255, 204],
             length: 4,
             path: [],
             // pos: [{ x: canvas.width / 4, y: canvas.height * 3 / 4 }],
@@ -34,14 +34,14 @@
         }
         let player3 = {
             calcPath: calcControllerPath,
-            color: 'green',
+            color: [153, 255, 153],
             length: 4,
             path: [],
             // pos: [{ x: canvas.width * 3 / 4, y: canvas.height * 3 / 4 }],
             seen: []
         }
         let food = {
-            color: 'cyan',
+            color: [153, 255, 255],
             energy: 4
         }
         let walls = undefined
@@ -54,12 +54,15 @@
             document.addEventListener('keydown', event => (arena.desiredKey = event.key))
         }
         let loop = () => {
-            context.fillStyle = arena.color
+            context.fillStyle = `rgba(${arena.color[0]}, ${arena.color[1]}, ${arena.color[2]}, 1)`
             context.fillRect(0, 0, canvas.width, canvas.height)
 
             new Array(player0, player1, player2, player3).filter(player => player.pos?.length).forEach(player => {
-                context.fillStyle = player.color
+                context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, 1)`
                 player.pos.forEach(pos => context.fillRect(pos.x + 1, pos.y + 1, arena.pxLen - 2, arena.pxLen - 2))
+                if (player.path[player.path.length - 1]?.x !== food.pos?.x || player.path[player.path.length - 1]?.y !== food.pos?.y) {
+                    player.path = []
+                }
                 player.calcPath?.(player)
                 let pos = player.path.shift()
                 pos && player.pos.unshift({ x: pos.x, y: pos.y })
@@ -67,19 +70,24 @@
                     player.pos.pop()
                 }
                 player.pos.forEach((pos, i) => {
-                    if (pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === player.pos[0]?.x && pos.y === player.pos[0]?.y)) {
-                        player.pos = []
+                    let didPlayerUnaliveThemselves = pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === player.pos?.[0].x && pos.y === player.pos?.[0].y)
+                    let shouldPlayerDespawn = 1 < [player0, player1, player2, player3].filter(player => player.pos).length
+                    if (didPlayerUnaliveThemselves && shouldPlayerDespawn) {
+                        player.pos = undefined
+                    }
+                    if (didPlayerUnaliveThemselves && !shouldPlayerDespawn) {
+                        player.calcPath = undefined
                     }
                     if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
                         player.length += food.energy
                         food.pos = undefined
                     }
                 })
-                context.fillStyle = 'rgba(255, 0, 0, 0.25)'
+                context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, .25)`
                 player.seen.forEach(pos => context.fillRect(Number(pos.split(', ')[0]), Number(pos.split(', ')[1]), arena.pxLen, arena.pxLen))
             })
 
-            context.fillStyle = food.color
+            context.fillStyle = `rgba(${food.color[0]}, ${food.color[1]}, ${food.color[2]}, 1)`
             context.fillRect(food.pos?.x, food.pos?.y, arena.pxLen, arena.pxLen)
             if (!food.pos) {
                 food.pos = {
@@ -99,26 +107,49 @@
                 arena.acceptedKey = { id: arena.desiredKey, x: arena.pxLen, y: 0 }
             }
             if (player.pos.length && arena.acceptedKey) {
-                player.path.push({ x: player.pos[0]?.x + arena.acceptedKey.x, y: player.pos[0]?.y + arena.acceptedKey.y })
+                player.path.push({ x: player.pos[0].x + arena.acceptedKey.x, y: player.pos[0].y + arena.acceptedKey.y })
             }
         }
+
         function calcLoopPath(player) {
             if (player.path.length) return
-            let x = player.pos[0].x
-            let y = player.pos[0].y
             player.path = player.path.concat([
-                { x: x + arena.pxLen, y },
-                { x: x + 2 * arena.pxLen, y },
-                { x: x + 2 * arena.pxLen, y: y + arena.pxLen },
-                { x: x + 2 * arena.pxLen, y: y + 2 * arena.pxLen },
-                { x: x + arena.pxLen, y: y + 2 * arena.pxLen },
-                { x, y: y + 2 * arena.pxLen },
-                { x, y: y + arena.pxLen },
-                { x, y }
+                {
+                    x: player.pos[0].x + arena.pxLen,
+                    y: player.pos[0].y
+                },
+                {
+                    x: player.pos[0].x + 2 * arena.pxLen,
+                    y: player.pos[0].y
+                },
+                {
+                    x: player.pos[0].x + 2 * arena.pxLen,
+                    y: player.pos[0].y + arena.pxLen
+                },
+                {
+                    x: player.pos[0].x + 2 * arena.pxLen,
+                    y: player.pos[0].y + 2 * arena.pxLen
+                },
+                {
+                    x: player.pos[0].x + arena.pxLen,
+                    y: player.pos[0].y + 2 * arena.pxLen
+                },
+                {
+                    x: player.pos[0].x,
+                    y: player.pos[0].y + 2 * arena.pxLen
+                },
+                {
+                    x: player.pos[0].x,
+                    y: player.pos[0].y + arena.pxLen
+                },
+                {
+                    x: player.pos[0].x,
+                    y: player.pos[0].y
+                }
             ])
         }
+
         function calcAStar(player) {
-            if (player.path.length || !food.pos || player.pos.find(pos => pos.x === food.pos.x && pos.y === food.pos.y)) return
             let getNeighbors = (vertex, depth) => {
                 let neighbors = [
                     { x: vertex.x, y: vertex.y - arena.pxLen },
@@ -129,6 +160,7 @@
                 playerPos = 0 < depth - (player.length - player.pos.length) ? player.pos.slice(0, -(depth - (player.length - player.pos.length))) : player.pos
                 return neighbors.filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !playerPos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)).map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - food.pos.x) ** 2 + (neighbor.y - food.pos.y) ** 2) }))
             }
+            if (player.path.length || !food.pos || player.pos.find(pos => pos.x === food.pos.x && pos.y === food.pos.y)) return
             let vertex = { ...player.pos[0], eval: Math.sqrt((player.pos[0].x - food.pos.x) ** 2 + (player.pos[0].y - food.pos.y) ** 2) }
             let deque = [vertex]
             let parents = { [`${vertex.x}, ${vertex.y}`]: `${vertex.x}, ${vertex.y}` }
@@ -145,11 +177,9 @@
                     }
                 })
                 vertex = deque.splice(bestEvalIndex, 1)[0]
-
                 if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
                     break
                 }
-
                 getNeighbors(vertex, depths[`${vertex.x}, ${vertex.y}`]).forEach(neighbor => {
                     if (!parents[`${neighbor.x}, ${neighbor.y}`]) {
                         deque.push(neighbor)
@@ -171,9 +201,12 @@
             }
             if (path[0].x === player.pos[0].x && path[0].y === player.pos[0].y) {
                 player.path = path.slice(1)
+            } else {
+                calcLoopPath(player)
             }
             player.seen = Object.keys(parents)
         }
+
         function calcLongestPath(player) {
             let calcLongestPathHelper = (path) => {
                 let getNeighbors = (vertex) => [
