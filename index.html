@@ -1,3 +1,6 @@
+<head>
+    <link rel='icon' href='#' />
+</head>
 <body>
     <div style='display: flex; height: 100%; justify-content: center;'><canvas height='400' id='canvas' width='400' /></div>
     <script>
@@ -9,23 +12,23 @@
             time: 5
         }
         let player0 = {
-            calcPath: calcAStar,
+            calcPath: calcLongestPath,
             color: [153, 0, 0],
             length: 4,
             path: [],
-            // pos: [{ x: canvas.width / 4, y: canvas.height / 4 }],
+            pos: [{ x: canvas.width / 4, y: canvas.height / 4 }],
             seen: []
         }
         let player1 = {
-            calcPath: calcLongestPath,
+            calcPath: undefined,
             color: [255, 153, 51],
             length: 4,
             path: [],
-            pos: [{ x: canvas.width * 3 / 4, y: canvas.height / 4 }],
+            // pos: [{ x: canvas.width * 3 / 4, y: canvas.height / 4 }],
             seen: []
         }
         let player2 = {
-            calcPath: calcAStar,
+            calcPath: undefined,
             color: [255, 255, 204],
             length: 4,
             path: [],
@@ -33,7 +36,7 @@
             seen: []
         }
         let player3 = {
-            calcPath: calcControllerPath,
+            calcPath: undefined,
             color: [153, 255, 153],
             length: 4,
             path: [],
