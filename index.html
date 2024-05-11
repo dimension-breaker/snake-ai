@@ -9,10 +9,10 @@
             color: [0, 0, 0],
             desiredKey: undefined,
             pxLen: 20,
-            time: 10
+            time: 5
         }
         let player0 = {
-            calcPath: calcLongestPath,
+            calcPath: calcLongestPathToTail,
             color: [153, 0, 0],
             length: 4,
             path: [],
@@ -97,6 +97,7 @@
                         if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
                             player.length += food.energy
                             food.pos = undefined
+                            console.log(player.length / (canvas.height * canvas.width / arena.pxLen / arena.pxLen))
                         }
                     })
                     context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, .25)`
@@ -226,16 +227,16 @@
             player.seen = Object.keys(parents)
         }
 
-        let calcLongestPathHelper = {
+        let calcLongestPathToFoodHelper = {
             _iter: 0,
             recursiveDFS: (player, path) => {
-                calcLongestPathHelper._iter += 1
+                calcLongestPathToFoodHelper._iter += 1
                 let vertex = path[path.length - 1]
-                if (player.path.length || 16384 <= calcLongestPathHelper._iter) {
+                if (player.path.length || 16384 <= calcLongestPathToFoodHelper._iter) {
                     return
                 }
                 if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
-                    if (.8 <= calcLongestPathHelper.getPositionsReachableAtDestination(player, path.slice(path.length - player.length - food.energy))) {
+                    if (.8 <= calcLongestPathToFoodHelper.getPositionsReachableAtDestination(player, path.slice(path.length - player.length - food.energy))) {
                         player.path = path.slice(1)
                         player.target = food.pos
                     }
@@ -253,7 +254,7 @@
                     .forEach(neighbor => {
                         if (!path.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)) {
                             path.push(neighbor)
-                            calcLongestPathHelper.recursiveDFS(player, path)
+                            calcLongestPathToFoodHelper.recursiveDFS(player, path)
                             path.pop()
                         }
                     })
@@ -282,47 +283,53 @@
             }
         }
 
-        function calcLongestPath(player) {
+        function calcLongestPathToFood(player) {
             if (player.path.length) return
-            calcLongestPathHelper._iter = 0
-            calcLongestPathHelper.recursiveDFS(player, [player.pos[0]])
+            calcLongestPathToFoodHelper._iter = 0
+            calcLongestPathToFoodHelper.recursiveDFS(player, [player.pos[0]])
             if (player.path.length === 0) {
-                calcAStarPath(player)
+                calcLongestPathToTail(player)
             }
         }
 
-        function calcSurvivalPath(player) {
-            let calcSurvivalPathHelper = (path, pathHashTable) => {
-                let getNeighbors = (vertex) => [
+        let calcLongestPathToTailHelper = {
+            _iter: 0,
+            recursiveDFS: (player, path) => {
+                calcLongestPathToTailHelper._iter += 1
+                let vertex = path[path.length - 1]
+                if (player.path.length || 16384 <= calcLongestPathToTailHelper._iter) {
+                    return
+                }
+                if (Math.sqrt((vertex.x - player.pos[player.pos.length - 1].x) ** 2 + (vertex.y - player.pos[player.pos.length - 1].y) ** 2) === arena.pxLen) {
+                    player.path = path.slice(1)
+                    return
+                }
+                [
                     { x: vertex.x, y: vertex.y - arena.pxLen },
                     { x: vertex.x, y: vertex.y + arena.pxLen },
                     { x: vertex.x - arena.pxLen, y: vertex.y },
                     { x: vertex.x + arena.pxLen, y: vertex.y }
-                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.posHashTable[`${neighbor.x}, ${neighbor.y}`])
-                _iter += 1
-                let vertex = path[path.length - 1]
-                if (player.path.length < path.length - 1) {
-                    player.path = path.slice(1)
-                    player.target = food.pos
-                    return
-                }
-                if (16384 <= _iter) {
-                    return
-                }
-                getNeighbors(vertex).forEach(neighbor => {
-                    if (!pathHashTable[`${neighbor.x}, ${neighbor.y}`]) {
-                        path.push(neighbor)
-                        pathHashTable[`${neighbor.x}, ${neighbor.y}`] = 1
-                        calcSurvivalPathHelper(path, pathHashTable)
-                        path.pop()
-                        pathHashTable[`${neighbor.x}, ${neighbor.y}`] = undefined
-                    }
-                })
+                ]
+                    .filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.posHashTable[`${neighbor.x}, ${neighbor.y}`])
+                    .map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - player.pos[player.pos.length - 1].x) ** 2 + (neighbor.y - player.pos[player.pos.length - 1].y) ** 2) }))
+                    .sort((a, b) => a.eval < b.eval ? 1 : -1)
+                    .forEach(neighbor => {
+                        if (!path.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)) {
+                            path.push(neighbor)
+                            calcLongestPathToTailHelper.recursiveDFS(player, path)
+                            path.pop()
+                        }
+                    })
             }
+        }
+
+        function calcLongestPathToTail(player) {
             if (player.path.length) return
-            let _iter = 0
-            calcLoopPath(player)
-            calcSurvivalPathHelper([player.pos[0]], { [`${player.pos[0].x}, ${player.pos[0].y}`]: 1 })
+            calcLongestPathToTailHelper._iter = 0
+            calcLongestPathToTailHelper.recursiveDFS(player, [player.pos[0]])
+            if (player.path.length === 0) {
+                calcAStarPath(player)
+            }
         }
     </script>
 </body>
