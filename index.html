@@ -12,7 +12,7 @@
             time: 10
         }
         let player0 = {
-            calcPath: calcLongestPath,
+            calcPath: calcLongestPathToFood,
             color: [153, 0, 0],
             length: 4,
             path: [],
@@ -210,8 +210,8 @@
             player.seen = Object.keys(parents)
         }
 
-        function calcLongestPath(player) {
-            let calcLongestPathHelper = (path) => {
+        function calcLongestPathToFood(player) {
+            let calcLongestPathToFoodHelper = (path) => {
                 let getNeighbors = (vertex) => [
                     { x: vertex.x, y: vertex.y - arena.pxLen },
                     { x: vertex.x, y: vertex.y + arena.pxLen },
@@ -236,7 +236,7 @@
                 getNeighbors(vertex).forEach(neighbor => {
                     if (!path.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)) {
                         path.push(neighbor)
-                        calcLongestPathHelper(path)
+                        calcLongestPathToFoodHelper(path)
                         path.pop()
                     }
                 })
@@ -265,7 +265,7 @@
             }
             if (player.path.length || !food.pos) return
             let _iter = 0
-            calcLongestPathHelper([player.pos[0]])
+            calcLongestPathToFoodHelper([player.pos[0]])
         }
     </script>
 </body>
