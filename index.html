@@ -9,7 +9,7 @@
             color: [0, 0, 0],
             desiredKey: undefined,
             pxLen: 20,
-            time: 10
+            time: 5
         }
         let player0 = {
             calcPath: calcLongestPath,
@@ -188,10 +188,6 @@
                 if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
                     break
                 }
-                if (getNeighbors(vertex).length === 0) {
-                    calcLoopPath(player)
-                    return
-                }
                 getNeighbors(vertex, depths[`${vertex.x}, ${vertex.y}`]).forEach(neighbor => {
                     if (!parents[`${neighbor.x}, ${neighbor.y}`]) {
                         deque.push(neighbor)
@@ -222,12 +218,6 @@
 
         function calcLongestPath(player) {
             let calcLongestPathHelper = (path) => {
-                let getNeighbors = (vertex) => [
-                    { x: vertex.x, y: vertex.y - arena.pxLen },
-                    { x: vertex.x, y: vertex.y + arena.pxLen },
-                    { x: vertex.x - arena.pxLen, y: vertex.y },
-                    { x: vertex.x + arena.pxLen, y: vertex.y },
-                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.pos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)).map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - food.pos.x) ** 2 + (neighbor.y - food.pos.y) ** 2) })).sort((a, b) => a.eval < b.eval ? 1 : -1)
                 _iter += 1
                 let vertex = path[path.length - 1]
                 if (player.path.length) {
@@ -242,10 +232,6 @@
                 }
                 if (16384 <= _iter) {
                     calcAStar(player)
-                    return
-                }
-                if (getNeighbors(vertex).length === 0) {
-                    calcLoopPath(player)
                     return
                 }
                 getNeighbors(vertex).forEach(neighbor => {
@@ -278,7 +264,17 @@
                 }
                 return .8 <= Object.keys(seen).length / (canvas.height * canvas.width / arena.pxLen / arena.pxLen - player.length - food.energy)
             }
+            let getNeighbors = (vertex) => [
+                { x: vertex.x, y: vertex.y - arena.pxLen },
+                { x: vertex.x, y: vertex.y + arena.pxLen },
+                { x: vertex.x - arena.pxLen, y: vertex.y },
+                { x: vertex.x + arena.pxLen, y: vertex.y },
+            ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.pos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)).map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - food.pos.x) ** 2 + (neighbor.y - food.pos.y) ** 2) })).sort((a, b) => a.eval < b.eval ? 1 : -1)
             if (player.path.length || !food.pos) return
+            if (getNeighbors(player.pos[0]).length === 0) {
+                calcLoopPath(player)
+                return
+            }
             let _iter = 0
             calcLongestPathHelper([player.pos[0]])
         }
