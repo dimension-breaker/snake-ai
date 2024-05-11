@@ -157,7 +157,7 @@
             ])
         }
 
-        function calcAStar(player) {
+        function calcAStarPath(player) {
             let getNeighbors = (vertex, depth) => {
                 let neighbors = [
                     { x: vertex.x, y: vertex.y - arena.pxLen },
@@ -224,14 +224,14 @@
                     return
                 }
                 if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
-                    if (canPlayerSurvivePath(player, path)) {
+                    if (canPlayerSurvive(player, path)) {
                         player.path = path.slice(1)
                         player.target = food.pos
                     }
                     return
                 }
                 if (16384 <= _iter) {
-                    calcAStar(player)
+                    calcAStarPath(player)
                     return
                 }
                 getNeighbors(vertex).forEach(neighbor => {
@@ -242,7 +242,7 @@
                     }
                 })
             }
-            let canPlayerSurvivePath = (player, path) => {
+            let canPlayerSurvive = (player, path) => {
                 let getNeighbors = (vertex) => [
                     { x: vertex.x, y: vertex.y - arena.pxLen },
                     { x: vertex.x, y: vertex.y + arena.pxLen },
