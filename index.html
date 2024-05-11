@@ -68,7 +68,7 @@
 
                 new Array(player0, player1, player2, player3).filter(player => player.pos?.length).forEach(player => {
                     context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, 1)`
-                    player.pos.forEach((pos, i) => i === 0 ? context.fillRect(pos.x, pos.y, arena.pxLen, arena.pxLen) : context.fillRect(pos.x + 1, pos.y + 1, arena.pxLen - 2, arena.pxLen - 2))
+                    player.pos.forEach((pos, i) => context.fillRect(pos.x + Math.min(i, 2), pos.y + Math.min(i, 2), arena.pxLen - Math.min(i * 2, 4), arena.pxLen - Math.min(i * 2, 4)))
                     if (player.target && (player.target.x !== food.pos?.x || player.target.y !== food.pos?.y)) {
                         player.path = []
                         player.target = undefined
