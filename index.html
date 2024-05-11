@@ -267,5 +267,63 @@
             let _iter = 0
             calcLongestPathToFoodHelper([player.pos[0]])
         }
+
+        function calcLongestPathToTail(player) {
+            let calcLongestPathToTailHelper = (path) => {
+                let getNeighbors = (vertex) => [
+                    { x: vertex.x, y: vertex.y - arena.pxLen },
+                    { x: vertex.x, y: vertex.y + arena.pxLen },
+                    { x: vertex.x - arena.pxLen, y: vertex.y },
+                    { x: vertex.x + arena.pxLen, y: vertex.y },
+                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.pos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)).map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - food.pos.x) ** 2 + (neighbor.y - food.pos.y) ** 2) })).sort((a, b) => a.eval < b.eval ? 1 : -1)
+                _iter += 1
+                let vertex = path[path.length - 1]
+                if (player.path.length) {
+                    return
+                }
+                if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
+                    if (canPlayerSurvivePath(player, path)) {
+                        player.path = path.slice(1)
+                    }
+                    return
+                }
+                if (16384 <= _iter) {
+                    calcAStar(player)
+                    return
+                }
+                getNeighbors(vertex).forEach(neighbor => {
+                    if (!path.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)) {
+                        path.push(neighbor)
+                        calcLongestPathToTailHelper(path)
+                        path.pop()
+                    }
+                })
+            }
+            let canPlayerSurvivePath = (player, path) => {
+                let getNeighbors = (vertex) => [
+                    { x: vertex.x, y: vertex.y - arena.pxLen },
+                    { x: vertex.x, y: vertex.y + arena.pxLen },
+                    { x: vertex.x - arena.pxLen, y: vertex.y },
+                    { x: vertex.x + arena.pxLen, y: vertex.y },
+                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height)
+                let deque = [path[path.length - 1]]
+                let seen = path.slice(path.length - player.length - food.energy).reduce((seen, pos) => { seen[`${pos.x}, ${pos.y}`] = 1; return seen; }, {})
+                let _iter = 0
+                while (deque.length && _iter < 2048) {
+                    let vertex = deque.pop()
+                    seen[`${vertex.x}, ${vertex.y}`] = 1
+                    getNeighbors(vertex).forEach(neighbor => {
+                        if (!seen[`${neighbor.x}, ${neighbor.y}`]) {
+                            deque.push(neighbor)
+                        }
+                    })
+                    _iter += 1
+                }
+                return .8 <= Object.keys(seen).length / (canvas.height * canvas.width / arena.pxLen / arena.pxLen - player.length - food.energy)
+            }
+            if (player.path.length || !food.pos) return
+            let _iter = 0
+            calcLongestPathToTailHelper([player.pos[0]])
+        }
     </script>
 </body>
