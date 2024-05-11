@@ -17,6 +17,7 @@
             length: 4,
             path: [],
             pos: [{ x: canvas.width / 4, y: canvas.height / 4 }],
+            posMap: { [`${canvas.width / 4}, ${canvas.height / 4}`]: 1 },
             seen: [],
             target: undefined
         }
@@ -26,6 +27,7 @@
             length: 4,
             path: [],
             // pos: [{ x: canvas.width * 3 / 4, y: canvas.height / 4 }],
+            posMap: { [`${canvas.width * 3 / 4}, ${canvas.height / 4}`]: 1 },
             seen: [],
             target: undefined
         }
@@ -35,6 +37,7 @@
             length: 4,
             path: [],
             // pos: [{ x: canvas.width / 4, y: canvas.height * 3 / 4 }],
+            posMap: { [`${canvas.width / 4}, ${canvas.height * 3 / 4}`]: 1 },
             seen: [],
             target: undefined
         }
@@ -44,6 +47,7 @@
             length: 4,
             path: [],
             // pos: [{ x: canvas.width * 3 / 4, y: canvas.height * 3 / 4 }],
+            posMap: { [`${canvas.width * 3 / 4}, ${canvas.height * 3 / 4}`]: 1 },
             seen: [],
             target: undefined
         }
@@ -73,23 +77,28 @@
                 }
                 food.pos && player.calcPath?.(player)
                 let pos = player.path.shift()
-                pos && player.pos.unshift({ x: pos.x, y: pos.y })
+                if (pos) {
+                    player.pos.unshift({ x: pos.x, y: pos.y })
+                    player.posMap[`${pos.x}, ${pos.y}`] = 1
+                }
                 while (player.length < player.pos.length) {
-                    player.pos.pop()
+                    pos = player.pos.pop()
+                    player.posMap[`${pos.x}, ${pos.y}`] = undefined
                 }
                 player.pos.forEach((pos, i) => {
                     let didPlayerUnaliveThemselves = pos.x < 0 || canvas.width <= pos.x || pos.y < 0 || canvas.height <= pos.y || (i && pos.x === player.pos?.[0].x && pos.y === player.pos?.[0].y)
                     let shouldPlayerDespawn = 1 < [player0, player1, player2, player3].filter(player => player.pos).length
                     if (didPlayerUnaliveThemselves && shouldPlayerDespawn) {
                         player.pos = undefined
+                        player.posMap = undefined
                     }
                     if (didPlayerUnaliveThemselves && !shouldPlayerDespawn) {
                         player.calcPath = undefined
+                        player.path = []
                     }
                     if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
                         player.length += food.energy
                         food.pos = undefined
-                        console.log(player.length / (canvas.height * canvas.width / arena.pxLen / arena.pxLen))
                     }
                 })
                 context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, .25)`
@@ -276,34 +285,37 @@
         }
 
         function calcSurvivalPath(player) {
-            let calcSurvivalPathHelper = (path) => {
+            let calcSurvivalPathHelper = (path, pathMap) => {
                 let getNeighbors = (vertex) => [
                     { x: vertex.x, y: vertex.y - arena.pxLen },
                     { x: vertex.x, y: vertex.y + arena.pxLen },
                     { x: vertex.x - arena.pxLen, y: vertex.y },
                     { x: vertex.x + arena.pxLen, y: vertex.y }
-                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.pos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y))
+                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.posMap[`${neighbor.x}, ${neighbor.y}`])
                 _iter += 1
                 let vertex = path[path.length - 1]
                 if (player.path.length < path.length - 1) {
                     player.path = path.slice(1)
+                    player.target = food.pos
                     return
                 }
                 if (16384 <= _iter) {
                     return
                 }
                 getNeighbors(vertex).forEach(neighbor => {
-                    if (!path.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)) {
+                    if (!pathMap[`${neighbor.x}, ${neighbor.y}`]) {
                         path.push(neighbor)
-                        calcSurvivalPathHelper(path)
+                        pathMap[`${neighbor.x}, ${neighbor.y}`] = 1
+                        calcSurvivalPathHelper(path, pathMap)
                         path.pop()
+                        pathMap[`${neighbor.x}, ${neighbor.y}`] = undefined
                     }
                 })
             }
             if (player.path.length) return
             let _iter = 0
             calcLoopPath(player)
-            calcSurvivalPathHelper([player.pos[0]])
+            calcSurvivalPathHelper([player.pos[0]], { [`${player.pos[0].x}, ${player.pos[0].y}`]: 1 })
         }
     </script>
 </body>
