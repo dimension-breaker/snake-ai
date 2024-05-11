@@ -1,5 +1,6 @@
 https://dimension-breaker.github.io/snake-ai/
 
 TODO
-add deque
-add heap
+use hash table
+use deque
+use heap

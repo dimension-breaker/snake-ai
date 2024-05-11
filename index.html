@@ -9,7 +9,7 @@
             color: [0, 0, 0],
             desiredKey: undefined,
             pxLen: 20,
-            time: 5
+            time: 10
         }
         let player0 = {
             calcPath: calcLongestPathToTail,
@@ -97,7 +97,6 @@
                         if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
                             player.length += food.energy
                             food.pos = undefined
-                            console.log(player.length / (canvas.height * canvas.width / arena.pxLen / arena.pxLen))
                         }
                     })
                     context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, .25)`
@@ -288,7 +287,7 @@
             calcLongestPathToFoodHelper._iter = 0
             calcLongestPathToFoodHelper.recursiveDFS(player, [player.pos[0]])
             if (player.path.length === 0) {
-                calcLongestPathToTail(player)
+                calcAStarPath(player)
             }
         }
 
@@ -297,7 +296,7 @@
             recursiveDFS: (player, path) => {
                 calcLongestPathToTailHelper._iter += 1
                 let vertex = path[path.length - 1]
-                if (player.path.length || 16384 <= calcLongestPathToTailHelper._iter) {
+                if (player.path.length || 32768 <= calcLongestPathToTailHelper._iter) {
                     return
                 }
                 if (Math.sqrt((vertex.x - player.pos[player.pos.length - 1].x) ** 2 + (vertex.y - player.pos[player.pos.length - 1].y) ** 2) === arena.pxLen) {
