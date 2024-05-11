@@ -12,12 +12,13 @@
             time: 10
         }
         let player0 = {
-            calcPath: calcLongestPathToFood,
+            calcPath: calcLongestPath,
             color: [153, 0, 0],
             length: 4,
             path: [],
             pos: [{ x: canvas.width / 4, y: canvas.height / 4 }],
-            seen: []
+            seen: [],
+            target: undefined
         }
         let player1 = {
             calcPath: undefined,
@@ -25,7 +26,8 @@
             length: 4,
             path: [],
             // pos: [{ x: canvas.width * 3 / 4, y: canvas.height / 4 }],
-            seen: []
+            seen: [],
+            target: undefined
         }
         let player2 = {
             calcPath: undefined,
@@ -33,7 +35,8 @@
             length: 4,
             path: [],
             // pos: [{ x: canvas.width / 4, y: canvas.height * 3 / 4 }],
-            seen: []
+            seen: [],
+            target: undefined
         }
         let player3 = {
             calcPath: undefined,
@@ -41,7 +44,8 @@
             length: 4,
             path: [],
             // pos: [{ x: canvas.width * 3 / 4, y: canvas.height * 3 / 4 }],
-            seen: []
+            seen: [],
+            target: undefined
         }
         let food = {
             color: [153, 255, 255],
@@ -63,8 +67,9 @@
             new Array(player0, player1, player2, player3).filter(player => player.pos?.length).forEach(player => {
                 context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, 1)`
                 player.pos.forEach(pos => context.fillRect(pos.x + 1, pos.y + 1, arena.pxLen - 2, arena.pxLen - 2))
-                if (player.path[player.path.length - 1]?.x !== food.pos?.x || player.path[player.path.length - 1]?.y !== food.pos?.y) {
+                if (player.target && (player.target.x !== food.pos?.x || player.target.y !== food.pos?.y)) {
                     player.path = []
+                    player.target = undefined
                 }
                 player.calcPath?.(player)
                 let pos = player.path.shift()
@@ -183,6 +188,10 @@
                 if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
                     break
                 }
+                if (getNeighbors(vertex).length === 0) {
+                    calcLoopPath(player)
+                    return
+                }
                 getNeighbors(vertex, depths[`${vertex.x}, ${vertex.y}`]).forEach(neighbor => {
                     if (!parents[`${neighbor.x}, ${neighbor.y}`]) {
                         deque.push(neighbor)
@@ -204,14 +213,15 @@
             }
             if (path[0].x === player.pos[0].x && path[0].y === player.pos[0].y) {
                 player.path = path.slice(1)
+                player.target = food.pos
             } else {
                 calcLoopPath(player)
             }
             player.seen = Object.keys(parents)
         }
 
-        function calcLongestPathToFood(player) {
-            let calcLongestPathToFoodHelper = (path) => {
+        function calcLongestPath(player) {
+            let calcLongestPathHelper = (path) => {
                 let getNeighbors = (vertex) => [
                     { x: vertex.x, y: vertex.y - arena.pxLen },
                     { x: vertex.x, y: vertex.y + arena.pxLen },
@@ -226,6 +236,7 @@
                 if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
                     if (canPlayerSurvivePath(player, path)) {
                         player.path = path.slice(1)
+                        player.target = food.pos
                     }
                     return
                 }
@@ -233,10 +244,14 @@
                     calcAStar(player)
                     return
                 }
+                if (getNeighbors(vertex).length === 0) {
+                    calcLoopPath(player)
+                    return
+                }
                 getNeighbors(vertex).forEach(neighbor => {
                     if (!path.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)) {
                         path.push(neighbor)
-                        calcLongestPathToFoodHelper(path)
+                        calcLongestPathHelper(path)
                         path.pop()
                     }
                 })
@@ -265,65 +280,38 @@
             }
             if (player.path.length || !food.pos) return
             let _iter = 0
-            calcLongestPathToFoodHelper([player.pos[0]])
+            calcLongestPathHelper([player.pos[0]])
         }
 
-        function calcLongestPathToTail(player) {
-            let calcLongestPathToTailHelper = (path) => {
+        function calcSurvivalPath(player) {
+            let calcSurvivalPathHelper = (path) => {
                 let getNeighbors = (vertex) => [
                     { x: vertex.x, y: vertex.y - arena.pxLen },
                     { x: vertex.x, y: vertex.y + arena.pxLen },
                     { x: vertex.x - arena.pxLen, y: vertex.y },
                     { x: vertex.x + arena.pxLen, y: vertex.y },
-                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.pos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)).map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - food.pos.x) ** 2 + (neighbor.y - food.pos.y) ** 2) })).sort((a, b) => a.eval < b.eval ? 1 : -1)
+                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.pos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y))
                 _iter += 1
                 let vertex = path[path.length - 1]
-                if (player.path.length) {
-                    return
-                }
-                if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
-                    if (canPlayerSurvivePath(player, path)) {
-                        player.path = path.slice(1)
-                    }
+                if (player.path.length < path.length - 1) {
+                    player.path = path.slice(1)
                     return
                 }
                 if (16384 <= _iter) {
-                    calcAStar(player)
                     return
                 }
                 getNeighbors(vertex).forEach(neighbor => {
                     if (!path.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)) {
                         path.push(neighbor)
-                        calcLongestPathToTailHelper(path)
+                        calcSurvivalPathHelper(path)
                         path.pop()
                     }
                 })
             }
-            let canPlayerSurvivePath = (player, path) => {
-                let getNeighbors = (vertex) => [
-                    { x: vertex.x, y: vertex.y - arena.pxLen },
-                    { x: vertex.x, y: vertex.y + arena.pxLen },
-                    { x: vertex.x - arena.pxLen, y: vertex.y },
-                    { x: vertex.x + arena.pxLen, y: vertex.y },
-                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height)
-                let deque = [path[path.length - 1]]
-                let seen = path.slice(path.length - player.length - food.energy).reduce((seen, pos) => { seen[`${pos.x}, ${pos.y}`] = 1; return seen; }, {})
-                let _iter = 0
-                while (deque.length && _iter < 2048) {
-                    let vertex = deque.pop()
-                    seen[`${vertex.x}, ${vertex.y}`] = 1
-                    getNeighbors(vertex).forEach(neighbor => {
-                        if (!seen[`${neighbor.x}, ${neighbor.y}`]) {
-                            deque.push(neighbor)
-                        }
-                    })
-                    _iter += 1
-                }
-                return .8 <= Object.keys(seen).length / (canvas.height * canvas.width / arena.pxLen / arena.pxLen - player.length - food.energy)
-            }
-            if (player.path.length || !food.pos) return
+            if (player.path.length) return
             let _iter = 0
-            calcLongestPathToTailHelper([player.pos[0]])
+            calcLoopPath(player)
+            calcSurvivalPathHelper([player.pos[0]])
         }
     </script>
 </body>
