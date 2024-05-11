@@ -9,7 +9,7 @@
             color: [0, 0, 0],
             desiredKey: undefined,
             pxLen: 20,
-            time: 5
+            time: 10
         }
         let player0 = {
             calcPath: calcLongestPath,
@@ -66,12 +66,12 @@
 
             new Array(player0, player1, player2, player3).filter(player => player.pos?.length).forEach(player => {
                 context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, 1)`
-                player.pos.forEach(pos => context.fillRect(pos.x + 1, pos.y + 1, arena.pxLen - 2, arena.pxLen - 2))
+                player.pos.forEach((pos, i) => i === 0 ? context.fillRect(pos.x, pos.y, arena.pxLen, arena.pxLen) : context.fillRect(pos.x + 1, pos.y + 1, arena.pxLen - 2, arena.pxLen - 2))
                 if (player.target && (player.target.x !== food.pos?.x || player.target.y !== food.pos?.y)) {
                     player.path = []
                     player.target = undefined
                 }
-                player.calcPath?.(player)
+                food.pos && player.calcPath?.(player)
                 let pos = player.path.shift()
                 pos && player.pos.unshift({ x: pos.x, y: pos.y })
                 while (player.length < player.pos.length) {
@@ -85,6 +85,7 @@
                     }
                     if (didPlayerUnaliveThemselves && !shouldPlayerDespawn) {
                         player.calcPath = undefined
+                        console.log(player.length / (canvas.height * canvas.width / arena.pxLen / arena.pxLen))
                     }
                     if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
                         player.length += food.energy
@@ -163,12 +164,12 @@
                     { x: vertex.x, y: vertex.y - arena.pxLen },
                     { x: vertex.x, y: vertex.y + arena.pxLen },
                     { x: vertex.x - arena.pxLen, y: vertex.y },
-                    { x: vertex.x + arena.pxLen, y: vertex.y },
+                    { x: vertex.x + arena.pxLen, y: vertex.y }
                 ]
                 playerPos = 0 < depth - (player.length - player.pos.length) ? player.pos.slice(0, -(depth - (player.length - player.pos.length))) : player.pos
                 return neighbors.filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !playerPos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)).map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - food.pos.x) ** 2 + (neighbor.y - food.pos.y) ** 2) }))
             }
-            if (player.path.length || !food.pos || player.pos.find(pos => pos.x === food.pos.x && pos.y === food.pos.y)) return
+            if (player.path.length || player.pos.find(pos => pos.x === food.pos.x && pos.y === food.pos.y)) return
             let vertex = { ...player.pos[0], eval: Math.sqrt((player.pos[0].x - food.pos.x) ** 2 + (player.pos[0].y - food.pos.y) ** 2) }
             let deque = [vertex]
             let parents = { [`${vertex.x}, ${vertex.y}`]: `${vertex.x}, ${vertex.y}` }
@@ -218,20 +219,22 @@
 
         function calcLongestPath(player) {
             let calcLongestPathHelper = (path) => {
+                let getNeighbors = (vertex) => [
+                    { x: vertex.x, y: vertex.y - arena.pxLen },
+                    { x: vertex.x, y: vertex.y + arena.pxLen },
+                    { x: vertex.x - arena.pxLen, y: vertex.y },
+                    { x: vertex.x + arena.pxLen, y: vertex.y }
+                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.pos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)).map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - food.pos.x) ** 2 + (neighbor.y - food.pos.y) ** 2) })).sort((a, b) => a.eval < b.eval ? 1 : -1)
                 _iter += 1
                 let vertex = path[path.length - 1]
-                if (player.path.length) {
+                if (player.path.length || 16384 <= _iter) {
                     return
                 }
                 if (vertex.x === food.pos.x && vertex.y === food.pos.y) {
-                    if (canPlayerSurvive(player, path)) {
+                    if (canPlayerSurvive(player, path.slice(path.length - player.length - food.energy))) {
                         player.path = path.slice(1)
                         player.target = food.pos
                     }
-                    return
-                }
-                if (16384 <= _iter) {
-                    calcAStarPath(player)
                     return
                 }
                 getNeighbors(vertex).forEach(neighbor => {
@@ -247,10 +250,10 @@
                     { x: vertex.x, y: vertex.y - arena.pxLen },
                     { x: vertex.x, y: vertex.y + arena.pxLen },
                     { x: vertex.x - arena.pxLen, y: vertex.y },
-                    { x: vertex.x + arena.pxLen, y: vertex.y },
-                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height)
+                    { x: vertex.x + arena.pxLen, y: vertex.y }
+                ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !path.find(pos => pos.x === neighbor.x && pos.y === neighbor.y))
                 let deque = [path[path.length - 1]]
-                let seen = path.slice(path.length - player.length - food.energy).reduce((seen, pos) => { seen[`${pos.x}, ${pos.y}`] = 1; return seen; }, {})
+                let seen = {}
                 let _iter = 0
                 while (deque.length && _iter < 2048) {
                     let vertex = deque.pop()
@@ -262,21 +265,14 @@
                     })
                     _iter += 1
                 }
-                return .8 <= Object.keys(seen).length / (canvas.height * canvas.width / arena.pxLen / arena.pxLen - player.length - food.energy)
+                return .8 <= (Object.keys(seen).length - 1) / (canvas.height * canvas.width / arena.pxLen / arena.pxLen - player.length - food.energy)
             }
-            let getNeighbors = (vertex) => [
-                { x: vertex.x, y: vertex.y - arena.pxLen },
-                { x: vertex.x, y: vertex.y + arena.pxLen },
-                { x: vertex.x - arena.pxLen, y: vertex.y },
-                { x: vertex.x + arena.pxLen, y: vertex.y },
-            ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.pos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y)).map(neighbor => ({ ...neighbor, eval: Math.sqrt((neighbor.x - food.pos.x) ** 2 + (neighbor.y - food.pos.y) ** 2) })).sort((a, b) => a.eval < b.eval ? 1 : -1)
-            if (player.path.length || !food.pos) return
-            if (getNeighbors(player.pos[0]).length === 0) {
-                calcLoopPath(player)
-                return
-            }
+            if (player.path.length || player.pos.find(pos => pos.x === food.pos.x && pos.y === food.pos.y)) return
             let _iter = 0
             calcLongestPathHelper([player.pos[0]])
+            if (player.path.length === 0) {
+                calcAStarPath(player)
+            }
         }
 
         function calcSurvivalPath(player) {
@@ -285,7 +281,7 @@
                     { x: vertex.x, y: vertex.y - arena.pxLen },
                     { x: vertex.x, y: vertex.y + arena.pxLen },
                     { x: vertex.x - arena.pxLen, y: vertex.y },
-                    { x: vertex.x + arena.pxLen, y: vertex.y },
+                    { x: vertex.x + arena.pxLen, y: vertex.y }
                 ].filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !player.pos.find(pos => pos.x === neighbor.x && pos.y === neighbor.y))
                 _iter += 1
                 let vertex = path[path.length - 1]
