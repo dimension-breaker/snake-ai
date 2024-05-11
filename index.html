@@ -85,11 +85,11 @@
                     }
                     if (didPlayerUnaliveThemselves && !shouldPlayerDespawn) {
                         player.calcPath = undefined
-                        console.log(player.length / (canvas.height * canvas.width / arena.pxLen / arena.pxLen))
                     }
                     if (pos.x === food.pos?.x && pos.y === food.pos?.y) {
                         player.length += food.energy
                         food.pos = undefined
+                        console.log(player.length / (canvas.height * canvas.width / arena.pxLen / arena.pxLen))
                     }
                 })
                 context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, .25)`
