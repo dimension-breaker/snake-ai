@@ -6,3 +6,4 @@ use deque
 use heap
 remove player.target
 limit player.length
+limit access modifiers
