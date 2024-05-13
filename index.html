@@ -9,10 +9,10 @@
             cellSize: 20,
             color: [0, 0, 0],
             desiredKey: undefined,
-            msPerFrame: 10
+            msPerFrame: 0
         }
         let player = {
-            calculatePath: calculateLongestTailChaserPath,
+            calculatePath: calculateHamiltonianCyclePath,
             color: [153, 0, 0],
             exploredPaths: [],
             length: 4,
@@ -229,6 +229,53 @@
                     pathArray.push(neighbor)
                     pathHashTable[`${neighbor.x}, ${neighbor.y}`] = 1
                     cltcpHelper(player, pathArray, pathHashTable)
+                    pathArray.pop()
+                    pathHashTable[`${neighbor.x}, ${neighbor.y}`] = undefined
+                })
+        }
+
+        let _cache
+        function calculateHamiltonianCyclePath(player) {
+            if (player.path.length) {
+                return
+            }
+            if (_cache) {
+                player.path = _cache.slice()
+                return
+            }
+            let vertex = {
+                x: Math.floor(Math.random() * canvas.height / arena.cellSize) * arena.cellSize,
+                y: Math.floor(Math.random() * canvas.height / arena.cellSize) * arena.cellSize
+            }
+            _iter = 0
+            chcpHelper(player, [vertex], { [`${vertex.x}, ${vertex.y}`]: 1 })
+        }
+
+        function chcpHelper(player, pathArray, pathHashTable) {
+            _iter += 1
+            let vertex = pathArray[pathArray.length - 1]
+
+            if (_cache || 32768 <= _iter) {
+                return
+            }
+            if (pathArray.length === (canvas.height * canvas.width / arena.cellSize / arena.cellSize)) {
+                _cache = pathArray.slice()
+                return
+            }
+
+            [
+                { x: vertex.x, y: vertex.y - arena.cellSize },
+                { x: vertex.x, y: vertex.y + arena.cellSize },
+                { x: vertex.x - arena.cellSize, y: vertex.y },
+                { x: vertex.x + arena.cellSize, y: vertex.y }
+            ]
+                .filter(neighbor => 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !pathHashTable[`${neighbor.x}, ${neighbor.y}`])
+                .map(neighbor => ({ ...neighbor, evaluation: Math.sqrt((neighbor.x - pathArray[0].x) ** 2 + (neighbor.y - pathArray[0].y) ** 2) }))
+                .sort((a, b) => a.evaluation < b.evaluation ? 1 : -1)
+                .forEach(neighbor => {
+                    pathArray.push(neighbor)
+                    pathHashTable[`${neighbor.x}, ${neighbor.y}`] = 1
+                    chcpHelper(player, pathArray, pathHashTable)
                     pathArray.pop()
                     pathHashTable[`${neighbor.x}, ${neighbor.y}`] = undefined
                 })
