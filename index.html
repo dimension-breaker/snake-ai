@@ -9,7 +9,7 @@
             cellSize: 20,
             color: [0, 0, 0],
             desiredKey: undefined,
-            msPerFrame: 20
+            msPerFrame: 10
         }
         let player = {
             calculatePath: calculateLongestTailChaserPath,
@@ -290,7 +290,7 @@
             add(item) {
                 this.array.push(item)
                 let i = this.array.length - 1
-                while (this.getParentIndex(i) >= 0 && this.array[i].evaluation < this.array[this.getParentIndex(i)].evaluation) {
+                while (0 <= this.getParentIndex(i) && this.array[i].evaluation < this.array[this.getParentIndex(i)].evaluation) {
                     let temp = this.array[this.getParentIndex(i)]
                     this.array[this.getParentIndex(i)] = this.array[i]
                     this.array[i] = temp
