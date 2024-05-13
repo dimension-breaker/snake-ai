@@ -12,7 +12,7 @@
             msPerFrame: 20
         }
         let player = {
-            calculatePath: calculateHamiltonianCyclePath,
+            calculatePath: calculateLongestTailChaserPath,
             color: [153, 0, 0],
             exploredPaths: [],
             length: 4,
@@ -149,7 +149,7 @@
             let depths = { [`${vertex.x}, ${vertex.y}`]: 0 }
             let parents = { [`${vertex.x}, ${vertex.y}`]: `${vertex.x}, ${vertex.y}` }
 
-            while (minHeap.peek()) {
+            while (minHeap.array.length) {
                 vertex = minHeap.remove()
 
                 if (vertex.x === food.position.x && vertex.y === food.position.y) {
@@ -276,81 +276,51 @@
 
         class MinHeap {
             constructor() {
-                this.heap = [];
+                this.array = []
             }
-            getLeftChildIndex(parentIndex) {
-                return 2 * parentIndex + 1;
+            getParentIndex(i) {
+                return Math.floor((i - 1) / 2)
             }
-            getRightChildIndex(parentIndex) {
-                return 2 * parentIndex + 2;
+            getLeftChildIndex(i) {
+                return 2 * i + 1
             }
-            getParentIndex(childIndex) {
-                return Math.floor((childIndex - 1) / 2);
-            }
-            hasLeftChild(index) {
-                return this.getLeftChildIndex(index) < this.heap.length;
-            }
-            hasRightChild(index) {
-                return this.getRightChildIndex(index) < this.heap.length;
-            }
-            hasParent(index) {
-                return this.getParentIndex(index) >= 0;
-            }
-            leftChild(index) {
-                return this.heap[this.getLeftChildIndex(index)];
-            }
-            rightChild(index) {
-                return this.heap[this.getRightChildIndex(index)];
-            }
-            parent(index) {
-                return this.heap[this.getParentIndex(index)];
-            }
-            swap(indexOne, indexTwo) {
-                const temp = this.heap[indexOne];
-                this.heap[indexOne] = this.heap[indexTwo];
-                this.heap[indexTwo] = temp;
-            }
-            peek() {
-                if (this.heap.length === 0) {
-                    return null;
-                }
-                return this.heap[0];
-            }
-            remove() {
-                if (this.heap.length === 0) {
-                    return null;
-                }
-                const item = this.heap[0];
-                this.heap[0] = this.heap[this.heap.length - 1];
-                this.heap.pop();
-                this.heapifyDown();
-                return item;
+            getRightChildIndex(i) {
+                return 2 * i + 2
             }
             add(item) {
-                this.heap.push(item);
-                this.heapifyUp();
-            }
-            heapifyUp() {
-                let index = this.heap.length - 1;
-                while (this.hasParent(index) && this.parent(index).evaluation > this.heap[index].evaluation) {
-                    this.swap(this.getParentIndex(index), index);
-                    index = this.getParentIndex(index);
+                this.array.push(item)
+                let i = this.array.length - 1
+                while (this.getParentIndex(i) >= 0 && this.array[i].evaluation < this.array[this.getParentIndex(i)].evaluation) {
+                    let temp = this.array[this.getParentIndex(i)]
+                    this.array[this.getParentIndex(i)] = this.array[i]
+                    this.array[i] = temp
+                    i = this.getParentIndex(i)
                 }
             }
-            heapifyDown() {
-                let index = 0;
-                while (this.hasLeftChild(index)) {
-                    let smallerChildIndex = this.getLeftChildIndex(index);
-                    if (this.hasRightChild(index) && this.rightChild(index).evaluation < this.leftChild(index).evaluation) {
-                        smallerChildIndex = this.getRightChildIndex(index);
+            remove() {
+                if (this.array.length === 0) {
+                    return
+                }
+                let item = this.array[0]
+                this.array[0] = this.array[this.array.length - 1]
+                this.array.pop()
+                let i = 0
+                while (this.getLeftChildIndex(i) < this.array.length) {
+                    let minChildIndex = this.getLeftChildIndex(i)
+                    if (this.getRightChildIndex(i) < this.array.length && this.array[this.getRightChildIndex(i)].evaluation < this.array[this.getLeftChildIndex(i)].evaluation) {
+                        minChildIndex = this.getRightChildIndex(i)
                     }
-                    if (this.heap[index] < this.heap[smallerChildIndex]) {
-                        break;
+
+                    if (this.array[i] < this.array[minChildIndex]) {
+                        break
                     } else {
-                        this.swap(index, smallerChildIndex);
+                        let temp = this.array[i]
+                        this.array[i] = this.array[minChildIndex]
+                        this.array[minChildIndex] = temp
                     }
-                    index = smallerChildIndex;
+                    i = minChildIndex
                 }
+                return item
             }
         }
     </script>
