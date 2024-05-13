@@ -9,7 +9,7 @@
             cellSize: 20,
             color: [0, 0, 0],
             desiredKey: undefined,
-            msPerFrame: 0
+            msPerFrame: 20
         }
         let player = {
             calculatePath: calculateHamiltonianCyclePath,
@@ -35,14 +35,14 @@
 
                 if (player.positionArray) {
                     player.calculatePath?.(player)
-                    let position = player.path.shift()
-                    if (position) {
-                        player.positionArray.unshift({ x: position.x, y: position.y })
-                        player.positionHashTable[`${position.x}, ${position.y}`] = 1
+                    let newPosition = player.path.shift()
+                    if (newPosition && player.length < player.positionArray.length + 1) {
+                        let oldPosition = player.positionArray.pop()
+                        delete player.positionHashTable[`${oldPosition.x}, ${oldPosition.y}`]
                     }
-                    while (player.length < player.positionArray.length) {
-                        position = player.positionArray.pop()
-                        player.positionHashTable[`${position.x}, ${position.y}`] = undefined
+                    if (newPosition) {
+                        player.positionArray.unshift({ x: newPosition.x, y: newPosition.y })
+                        player.positionHashTable[`${newPosition.x}, ${newPosition.y}`] = 1
                     }
                     player.positionArray.forEach((position, i) => {
                         if ((i && position.x === player.positionArray[0].x && position.y === player.positionArray[0].y) || position.x < 0 || canvas.width <= position.x || position.y < 0 || canvas.height <= position.y) {
@@ -144,20 +144,13 @@
                 return
             }
             let vertex = { ...player.positionArray[0], evaluation: Math.sqrt((player.positionArray[0].x - food.position.x) ** 2 + (player.positionArray[0].y - food.position.y) ** 2) }
-            let deque = [vertex]
+            let minHeap = new MinHeap()
+            minHeap.add(vertex)
             let depths = { [`${vertex.x}, ${vertex.y}`]: 0 }
             let parents = { [`${vertex.x}, ${vertex.y}`]: `${vertex.x}, ${vertex.y}` }
 
-            while (deque.length) {
-                let minEvaluation = Number.MAX_VALUE
-                let minEvaluationIndex = undefined
-                deque.forEach((vertex, i) => {
-                    if (vertex.evaluation < minEvaluation) {
-                        minEvaluation = vertex.evaluation
-                        minEvaluationIndex = i
-                    }
-                })
-                vertex = deque.splice(minEvaluationIndex, 1)[0]
+            while (minHeap.peek()) {
+                vertex = minHeap.remove()
 
                 if (vertex.x === food.position.x && vertex.y === food.position.y) {
                     break
@@ -172,7 +165,7 @@
                     .filter(neighbor => !player.positionArray.slice(0, Math.max(0, player.length - 1 - depths[`${vertex.x}, ${vertex.y}`])).find(position => position.x === neighbor.x && position.y === neighbor.y) && 0 <= neighbor.x && neighbor.x < canvas.width && 0 <= neighbor.y && neighbor.y < canvas.height && !parents[`${neighbor.x}, ${neighbor.y}`])
                     .map(neighbor => ({ ...neighbor, evaluation: Math.sqrt((neighbor.x - food.position.x) ** 2 + (neighbor.y - food.position.y) ** 2) }))
                     .forEach(neighbor => {
-                        deque.push(neighbor)
+                        minHeap.add(neighbor)
                         depths[`${neighbor.x}, ${neighbor.y}`] = depths[`${vertex.x}, ${vertex.y}`] + 1
                         parents[`${neighbor.x}, ${neighbor.y}`] = `${vertex.x}, ${vertex.y}`
                     })
@@ -230,7 +223,7 @@
                     pathHashTable[`${neighbor.x}, ${neighbor.y}`] = 1
                     cltcpHelper(player, pathArray, pathHashTable)
                     pathArray.pop()
-                    pathHashTable[`${neighbor.x}, ${neighbor.y}`] = undefined
+                    delete pathHashTable[`${neighbor.x}, ${neighbor.y}`]
                 })
         }
 
@@ -277,8 +270,88 @@
                     pathHashTable[`${neighbor.x}, ${neighbor.y}`] = 1
                     chcpHelper(player, pathArray, pathHashTable)
                     pathArray.pop()
-                    pathHashTable[`${neighbor.x}, ${neighbor.y}`] = undefined
+                    delete pathHashTable[`${neighbor.x}, ${neighbor.y}`]
                 })
+        }
+
+        class MinHeap {
+            constructor() {
+                this.heap = [];
+            }
+            getLeftChildIndex(parentIndex) {
+                return 2 * parentIndex + 1;
+            }
+            getRightChildIndex(parentIndex) {
+                return 2 * parentIndex + 2;
+            }
+            getParentIndex(childIndex) {
+                return Math.floor((childIndex - 1) / 2);
+            }
+            hasLeftChild(index) {
+                return this.getLeftChildIndex(index) < this.heap.length;
+            }
+            hasRightChild(index) {
+                return this.getRightChildIndex(index) < this.heap.length;
+            }
+            hasParent(index) {
+                return this.getParentIndex(index) >= 0;
+            }
+            leftChild(index) {
+                return this.heap[this.getLeftChildIndex(index)];
+            }
+            rightChild(index) {
+                return this.heap[this.getRightChildIndex(index)];
+            }
+            parent(index) {
+                return this.heap[this.getParentIndex(index)];
+            }
+            swap(indexOne, indexTwo) {
+                const temp = this.heap[indexOne];
+                this.heap[indexOne] = this.heap[indexTwo];
+                this.heap[indexTwo] = temp;
+            }
+            peek() {
+                if (this.heap.length === 0) {
+                    return null;
+                }
+                return this.heap[0];
+            }
+            remove() {
+                if (this.heap.length === 0) {
+                    return null;
+                }
+                const item = this.heap[0];
+                this.heap[0] = this.heap[this.heap.length - 1];
+                this.heap.pop();
+                this.heapifyDown();
+                return item;
+            }
+            add(item) {
+                this.heap.push(item);
+                this.heapifyUp();
+            }
+            heapifyUp() {
+                let index = this.heap.length - 1;
+                while (this.hasParent(index) && this.parent(index).evaluation > this.heap[index].evaluation) {
+                    this.swap(this.getParentIndex(index), index);
+                    index = this.getParentIndex(index);
+                }
+            }
+            heapifyDown() {
+                let index = 0;
+                while (this.hasLeftChild(index)) {
+                    let smallerChildIndex = this.getLeftChildIndex(index);
+                    if (this.hasRightChild(index) && this.rightChild(index).evaluation < this.leftChild(index).evaluation) {
+                        smallerChildIndex = this.getRightChildIndex(index);
+                    }
+                    if (this.heap[index] < this.heap[smallerChildIndex]) {
+                        break;
+                    } else {
+                        this.swap(index, smallerChildIndex);
+                    }
+                    index = smallerChildIndex;
+                }
+            }
         }
     </script>
 </body>
