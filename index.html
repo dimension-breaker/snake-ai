@@ -9,7 +9,9 @@
             cellSize: 20,
             color: [0, 0, 0],
             desiredKey: undefined,
-            msPerFrame: 10
+            msPerFrame: 10,
+            onWinOrLost: 1,
+            winners: []
         }
         let player = {
             calculatePath: calculateLongestTailChaserPath,
@@ -45,9 +47,24 @@
                         player.positionHashTable[`${newPosition.x}, ${newPosition.y}`] = 1
                     }
                     player.positionArray.forEach((position, i) => {
-                        if ((i && position.x === player.positionArray[0].x && position.y === player.positionArray[0].y) || position.x < 0 || canvas.width <= position.x || position.y < 0 || canvas.height <= position.y) {
+                        let isLost = (i && position.x === player.positionArray?.[0].x && position.y === player.positionArray?.[0].y) || position.x < 0 || canvas.width <= position.x || position.y < 0 || canvas.height <= position.y
+                        let score = player.length / (canvas.height * canvas.width / arena.cellSize / arena.cellSize)
+                        if (arena.onWinOrLost === 0 && isLost) {
+                            player.positionArray = undefined
+                            player.positionHashTable = undefined
+                        }
+                        if (arena.onWinOrLost === 1 && isLost) {
                             player.calculatePath = undefined
                             player.path = []
+                        }
+                        if (arena.onWinOrLost === 2 && (isLost || 1 <= score)) {
+                            arena.winners.push({ id: player.calculatePath.name, score })
+                            console.log(`Iteration: ${arena.winners.length - 1}\nScore: ${score}\nAverage Score: ${arena.winners.reduce((totalScore, winner) => totalScore + winner.score, 0) / arena.winners.length}`)
+                            40 <= arena.winners.length && (arena.onWinOrLost = 1)
+                            player.length = 4
+                            player.path = []
+                            player.positionArray = [{ x: canvas.width / 4, y: canvas.height / 4 }]
+                            player.positionHashTable = { [`${canvas.width / 4}, ${canvas.height / 4}`]: 1 }
                         }
                         if (position.x === food.position?.x && position.y === food.position?.y) {
                             player.length += food.energy
@@ -55,7 +72,7 @@
                         }
                     })
                     context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, 1)`
-                    player.positionArray.forEach((position, i) => context.fillRect(position.x + Math.min(i, 2), position.y + Math.min(i, 2), arena.cellSize - Math.min(i * 2, 4), arena.cellSize - Math.min(i * 2, 4)))
+                    player.positionArray?.forEach((position, i) => context.fillRect(position.x + Math.min(i, 2), position.y + Math.min(i, 2), arena.cellSize - Math.min(i * 2, 4), arena.cellSize - Math.min(i * 2, 4)))
                     context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, .25)`
                     player.exploredPaths.forEach(position => context.fillRect(Number(position.split(', ')[0]), Number(position.split(', ')[1]), arena.cellSize, arena.cellSize))
                 }
@@ -190,14 +207,15 @@
             if (player.path.length) {
                 return
             }
+            let seen = {}
             _iter = 0
-            cltcpHelper(player, [player.positionArray[0]], { [`${player.positionArray[0].x}, ${player.positionArray[0].y}`]: 1 })
+            cltcpHelper(player, [player.positionArray[0]], { [`${player.positionArray[0].x}, ${player.positionArray[0].y}`]: 1 }, seen)
             if (!player.path.length) {
                 calculateAStarPath(player)
             }
         }
 
-        function cltcpHelper(player, pathArray, pathHashTable) {
+        function cltcpHelper(player, pathArray, pathHashTable, seen) {
             _iter += 1
             let vertex = pathArray[pathArray.length - 1]
 
@@ -206,6 +224,7 @@
             }
             if (Math.sqrt((vertex.x - player.positionArray[player.positionArray.length - 1].x) ** 2 + (vertex.y - player.positionArray[player.positionArray.length - 1].y) ** 2) === arena.cellSize) {
                 player.path = pathArray.slice(1)
+                player.exploredPaths = Object.keys(seen)
                 return
             }
 
@@ -221,7 +240,8 @@
                 .forEach(neighbor => {
                     pathArray.push(neighbor)
                     pathHashTable[`${neighbor.x}, ${neighbor.y}`] = 1
-                    cltcpHelper(player, pathArray, pathHashTable)
+                    seen[`${neighbor.x}, ${neighbor.y}`] = 1
+                    cltcpHelper(player, pathArray, pathHashTable, seen)
                     pathArray.pop()
                     delete pathHashTable[`${neighbor.x}, ${neighbor.y}`]
                 })
