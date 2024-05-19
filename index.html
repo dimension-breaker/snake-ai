@@ -213,13 +213,13 @@
             }
             let seen = {}
             _iter = 0
-            cltcpHelper(player, [player.positionArray[0]], { [`${player.positionArray[0].x}, ${player.positionArray[0].y}`]: 1 }, seen)
+            calculateLongestTailChaserPathHelper(player, [player.positionArray[0]], { [`${player.positionArray[0].x}, ${player.positionArray[0].y}`]: 1 }, seen)
             if (!player.path.length) {
                 calculateAStarPath(player)
             }
         }
 
-        function cltcpHelper(player, pathArray, pathHashTable, seen) {
+        function calculateLongestTailChaserPathHelper(player, pathArray, pathHashTable, seen) {
             _iter += 1
             let vertex = pathArray[pathArray.length - 1]
 
@@ -245,7 +245,7 @@
                     pathArray.push(neighbor)
                     pathHashTable[`${neighbor.x}, ${neighbor.y}`] = 1
                     seen[`${neighbor.x}, ${neighbor.y}`] = 1
-                    cltcpHelper(player, pathArray, pathHashTable, seen)
+                    calculateLongestTailChaserPathHelper(player, pathArray, pathHashTable, seen)
                     pathArray.pop()
                     delete pathHashTable[`${neighbor.x}, ${neighbor.y}`]
                 })
@@ -265,10 +265,10 @@
                 y: Math.floor(Math.random() * canvas.height / arena.cellSize) * arena.cellSize
             }
             _iter = 0
-            chcpHelper(player, [vertex], { [`${vertex.x}, ${vertex.y}`]: 1 })
+            calculateHamiltonianCyclePathHelper(player, [vertex], { [`${vertex.x}, ${vertex.y}`]: 1 })
         }
 
-        function chcpHelper(player, pathArray, pathHashTable) {
+        function calculateHamiltonianCyclePathHelper(player, pathArray, pathHashTable) {
             _iter += 1
             let vertex = pathArray[pathArray.length - 1]
 
@@ -292,7 +292,7 @@
                 .forEach(neighbor => {
                     pathArray.push(neighbor)
                     pathHashTable[`${neighbor.x}, ${neighbor.y}`] = 1
-                    chcpHelper(player, pathArray, pathHashTable)
+                    calculateHamiltonianCyclePathHelper(player, pathArray, pathHashTable)
                     pathArray.pop()
                     delete pathHashTable[`${neighbor.x}, ${neighbor.y}`]
                 })
