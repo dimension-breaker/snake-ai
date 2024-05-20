@@ -1,8 +1,75 @@
 <head>
-    <link rel='icon' href='#' />
+    <meta content='width=device-width' name='viewport'>
+    <link href='#' rel='icon'>
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css' rel='stylesheet'>
 </head>
 <body>
-    <div style='display: flex; height: 100%; justify-content: center;'><canvas height='400' id='canvas' width='400' /></div>
+    <style>
+        div, select {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        @media (max-width: 500px) {
+            #rowOrColumn {
+                flex-direction: column;
+            }
+        }
+    </style>
+    <div id='rowOrColumn' style='display: flex; gap: 8px; height: 100%;'>
+        <canvas height='400' id='canvas' style='border-radius: 4px; flex: 0 1 auto' width='400'></canvas>
+        <div style='border: 1px solid lightgray; border-radius: 4px; display: flex; flex: 1 1 30%; flex-direction: column; gap: 16px; overflow: auto; padding: 16px;'>
+            <div style='display: flex; flex-direction: column; gap: 4px;'>
+                <div style='align-items: center; display: flex; justify-content: space-between;'>
+                    <div style='font-size: 24px;'>Snake AI</div>
+                    <button onclick='restart()' style='background-color: white; border: 1px solid lightgray; border-radius: 4px; padding: 4px'>
+                        <i class='fa fa-refresh'></i>
+                    </button>
+                </div>
+                <div id='score'></div>
+            </div>
+            <div style='display: flex; flex-direction: column; gap: 8px;'>
+                <div style='font-size: 16px;'>Pathfinding Algorithm</div>
+                <select id='calculatePath' style='border: 1px solid lightgray; border-radius: 4px; padding: 4px 0px;'>
+                    <option>calculateArrowKeysPath</option>
+                    <option>calculateLoopPath</option>
+                    <option>calculateAStarPath</option>
+                    <option selected>calculateLongestTailChaserPath</option>
+                    <option>calculateHamiltonianCyclePath</option>
+                </select>
+                <div>
+                    <strong>calculateArrowKeysPath [Average Score: ??]</strong> - The path here is calculated via your arrow keys.
+                    For only this algorithm, the framerate here is slowed 20x to help you out.
+                    How well can you do?
+                    Tip: After you click on the restart button, it'll be focused and if you press the enter key, it'll do a restart.
+                </div>
+                <div>
+                    <strong>calculateLoopPath [Average Score Over 40 Attempts: 1%]</strong> - The hello world of pathfinding algorithms.
+                    There is a special rule in place: If the player travels the entire size of the board 10 times, it'll starve and lose.
+                </div>
+                <div>
+                    <strong>calculateAStarPath [Average Score: 20.740000000000008%]</strong> - While BFS does find the shortest path to the food, it takes a bit of guesswork.
+                    A* on the other hand, uses a heuristic.
+                    The heuristic used here is to path in the direction that brings you closer to the food.
+                    Other implementation details: 1) If a path couldn't be found, it'll fall back on the calculateLoopPath algorithm.
+                    2) My A* isn't real time, however, it does try to guess where the tail is doesn't it doesn't accidentally dodge a tail that is no longer there.
+                    The score is not great, not terrible.
+                    The shortest path to the food sometimes can trap the player.
+                </div>
+                <div>
+                    <strong>calculateLongestTailChaserPath [Average Score: 70%]</strong> - This is a tail chasing algorithm.
+                    It'll find the longest path to it's tail and completely ignore the food.
+                    This is a considerably more expensive algorithm, so if it couldn't find a path, it'll fall back on to A*.
+                    This algorithm sometimes loses via starvation and sometimes generates a hamiltonian cycle for some of it's paths, however, both are very rare.
+                    This algorithm does win a shocking number of times.
+                </div>
+                <div>
+                    <strong>calculateHamiltonianCyclePath [Average Score: 99.9%]</strong> - Instead of sometimes making a hamiltonian cycle, we're just gonna make one and reuse it.
+                    And instead of using A* as a random fallback, we're gonna have a similar heuristic to help make shortcuts in the hamiltonian cycle.
+                    Sometimes, it'll make a risky shortcut and lose, however, this is very rare.
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         let arena = {
             acceptedKey: undefined,
@@ -10,29 +77,34 @@
             color: [0, 0, 0],
             desiredKey: undefined,
             isAutoRestart: false,
-            msPerFrame: 20,
+            msPerFrame: 5,
             size: canvas.height * canvas.width / 20 / 20,
             winners: []
         }
         let player = {
-            calculatePath: calculateHamiltonianCyclePath,
             color: [153, 0, 0],
-            exploredPaths: [],
-            length: 4,
-            path: [],
-            positionArray: [{ x: canvas.width / 4, y: canvas.height / 4 }],
-            positionHashTable: { [`${canvas.width / 4}, ${canvas.height / 4}`]: 1 },
-            saturation: arena.size * 10
+            exploredPaths: []
         }
         let food = {
             color: [153, 255, 255],
             energy: 4
         }
+        let restart = () => {
+            arena.acceptedKey = undefined
+            arena.desiredKey = undefined
+            player.calculatePath = window[document.getElementById('calculatePath').value]
+            player.length = 4
+            player.path = []
+            player.positionArray = [{ x: canvas.width / 4, y: canvas.height / 4 }]
+            player.positionHashTable = { [`${canvas.width / 4}, ${canvas.height / 4}`]: 1 }
+            player.saturation = arena.size * 10
+        }
+        restart()
 
         window.onload = () => {
             canvas = document.getElementById('canvas')
-            context = canvas.getContext('2d')
-            document.addEventListener('keydown', event => (arena.desiredKey = event.key))
+            let context = canvas.getContext('2d')
+            document.addEventListener('keydown', event => arena.desiredKey = event.key)
             setInterval(() => {
                 context.fillStyle = `rgba(${arena.color[0]}, ${arena.color[1]}, ${arena.color[2]}, 1)`
                 context.fillRect(0, 0, canvas.width, canvas.height)
@@ -43,7 +115,7 @@
                     if (newPosition && player.length < player.positionArray.length + 1) {
                         let oldPosition = player.positionArray.pop()
                         delete player.positionHashTable[`${oldPosition.x}, ${oldPosition.y}`]
-                        player.saturation -= 1
+                        food.position && player.saturation--
                     }
                     if (newPosition) {
                         player.positionArray.unshift({ x: newPosition.x, y: newPosition.y })
@@ -62,11 +134,7 @@
                             arena.winners.push({ id: player.calculatePath.name, score: player.length / arena.size })
                             console.log(`Iteration: ${arena.winners.length - 1}\nScore: ${player.length / arena.size}\nAverage Score: ${arena.winners.reduce((totalScore, winner) => totalScore + winner.score, 0) / arena.winners.length}`)
                             40 <= arena.winners.length && (arena.isAutoRestart = false)
-                            player.length = 4
-                            player.path = []
-                            player.positionArray = [{ x: canvas.width / 4, y: canvas.height / 4 }]
-                            player.positionHashTable = { [`${canvas.width / 4}, ${canvas.height / 4}`]: 1 }
-                            player.saturation = arena.size * 10
+                            restart()
                             return true
                         }
                         if (position.x === food.position?.x && position.y === food.position?.y) {
@@ -80,6 +148,7 @@
                     context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, .25)`
                     player.exploredPaths.forEach(position => context.fillRect(Number(position.split(', ')[0]), Number(position.split(', ')[1]), arena.cellSize, arena.cellSize))
                 }
+                document.getElementById('score').innerHTML = 'Current Score: ' + Math.round(player.length / arena.size * 100) + '%'
 
                 if (!food.position && player.length / arena.size < 1) {
                     let availablePositions = []
@@ -97,18 +166,24 @@
             }, arena.msPerFrame)
         }
 
+        let _sleep
         function calculateArrowKeysPath(player) {
+            _sleep--
+            if (0 < _sleep) {
+                return
+            }
             if (arena.desiredKey === 'ArrowUp' && arena.acceptedKey?.id !== 'ArrowDown') {
-                arena.acceptedKey = { id: arena.desiredKey, x: 0, y: -arena.pxLen }
+                arena.acceptedKey = { id: arena.desiredKey, x: 0, y: -arena.cellSize }
             } else if (arena.desiredKey === 'ArrowDown' && arena.acceptedKey?.id !== 'ArrowUp') {
-                arena.acceptedKey = { id: arena.desiredKey, x: 0, y: arena.pxLen }
+                arena.acceptedKey = { id: arena.desiredKey, x: 0, y: arena.cellSize }
             } else if (arena.desiredKey === 'ArrowLeft' && arena.acceptedKey?.id !== 'ArrowRight') {
-                arena.acceptedKey = { id: arena.desiredKey, x: -arena.pxLen, y: 0 }
+                arena.acceptedKey = { id: arena.desiredKey, x: -arena.cellSize, y: 0 }
             } else if (arena.desiredKey === 'ArrowRight' && arena.acceptedKey?.id !== 'ArrowLeft') {
-                arena.acceptedKey = { id: arena.desiredKey, x: arena.pxLen, y: 0 }
+                arena.acceptedKey = { id: arena.desiredKey, x: arena.cellSize, y: 0 }
             }
             if (player.positionArray.length && arena.acceptedKey) {
                 player.path.push({ x: player.positionArray[0].x + arena.acceptedKey.x, y: player.positionArray[0].y + arena.acceptedKey.y })
+                _sleep = 20
             }
         }
 
