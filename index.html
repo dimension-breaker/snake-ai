@@ -65,7 +65,7 @@
                 <div>
                     <strong>calculateHamiltonianCyclePath [Average Score: 99.9%]</strong> - Instead of sometimes making a hamiltonian cycle, we're just gonna make one and reuse it.
                     And instead of using A* as a random fallback, we're gonna have a similar heuristic to help make shortcuts in the hamiltonian cycle.
-                    Sometimes, it'll make a risky shortcut and lose, however, this is very rare.
+                    Sometimes, it'll take a risky shortcut near the endgame and lose, however, this is very rare.
                 </div>
             </div>
         </div>
@@ -82,8 +82,7 @@
             winners: []
         }
         let player = {
-            color: [153, 0, 0],
-            exploredPaths: []
+            color: [153, 0, 0]
         }
         let food = {
             color: [153, 255, 255],
@@ -93,6 +92,7 @@
             arena.acceptedKey = undefined
             arena.desiredKey = undefined
             player.calculatePath = window[document.getElementById('calculatePath').value]
+            player.exploredPaths = []
             player.length = 4
             player.path = []
             player.positionArray = [{ x: canvas.width / 4, y: canvas.height / 4 }]
@@ -124,15 +124,15 @@
                     player.positionArray.some((position, i) => {
                         let isCollisionLost = (i && position.x === player.positionArray[0].x && position.y === player.positionArray[0].y) || position.x < 0 || canvas.width <= position.x || position.y < 0 || canvas.height <= position.y
                         let isSaturationLost = player.saturation <= 0
-                        let isWin = 1 <= player.length / arena.size
+                        let isWin = 1 <= player.positionArray.length / arena.size
                         if (!arena.isAutoRestart && (isCollisionLost || isSaturationLost)) {
                             player.calculatePath = undefined
                             player.path = []
                             return true
                         }
                         if (arena.isAutoRestart && (isCollisionLost || isSaturationLost || isWin)) {
-                            arena.winners.push({ id: player.calculatePath.name, score: player.length / arena.size })
-                            console.log(`Iteration: ${arena.winners.length - 1}\nScore: ${player.length / arena.size}\nAverage Score: ${arena.winners.reduce((totalScore, winner) => totalScore + winner.score, 0) / arena.winners.length}`)
+                            arena.winners.push({ id: player.calculatePath.name, score: player.positionArray.length / arena.size })
+                            console.log(`Iteration: ${arena.winners.length - 1}\nScore: ${player.positionArray.length / arena.size}\nAverage Score: ${arena.winners.reduce((totalScore, winner) => totalScore + winner.score, 0) / arena.winners.length}`)
                             40 <= arena.winners.length && (arena.isAutoRestart = false)
                             restart()
                             return true
@@ -148,7 +148,7 @@
                     context.fillStyle = `rgba(${player.color[0]}, ${player.color[1]}, ${player.color[2]}, .25)`
                     player.exploredPaths.forEach(position => context.fillRect(Number(position.split(', ')[0]), Number(position.split(', ')[1]), arena.cellSize, arena.cellSize))
                 }
-                document.getElementById('score').innerHTML = 'Current Score: ' + Math.round(player.length / arena.size * 100) + '%'
+                document.getElementById('score').innerHTML = 'Current Score: ' + Math.round(player.positionArray.length / arena.size * 100) + '%'
 
                 if (!food.position && player.length / arena.size < 1) {
                     let availablePositions = []
