@@ -61,7 +61,7 @@
                         if (arena.isAutoRestart && (isCollisionLost || isSaturationLost || isWin)) {
                             arena.winners.push({ id: player.calculatePath.name, score: player.length / arena.size })
                             console.log(`Iteration: ${arena.winners.length - 1}\nScore: ${player.length / arena.size}\nAverage Score: ${arena.winners.reduce((totalScore, winner) => totalScore + winner.score, 0) / arena.winners.length}`)
-                            40 <= arena.winners.length && (arena.onWinOrLost = 1)
+                            40 <= arena.winners.length && (arena.isAutoRestart = false)
                             player.length = 4
                             player.path = []
                             player.positionArray = [{ x: canvas.width / 4, y: canvas.height / 4 }]
@@ -220,7 +220,7 @@
         }
 
         function calculateLongestTailChaserPathHelper(player, pathArray, pathHashTable, seen) {
-            _iter += 1
+            _iter++
             let vertex = pathArray[pathArray.length - 1]
 
             if (player.path.length || 32768 <= _iter) {
@@ -251,32 +251,58 @@
                 })
         }
 
-        let _cache
+        let _hamiltonianCycleArray
+        let _hamiltonianCyclePositionIndexPairs
         function calculateHamiltonianCyclePath(player) {
             if (player.path.length) {
                 return
             }
-            if (_cache) {
-                player.path = _cache.slice()
+            if (_hamiltonianCycleArray && !food.position) {
+                player.path = _hamiltonianCycleArray.slice(_hamiltonianCyclePositionIndexPairs[`${player.positionArray[0].x}, ${player.positionArray[0].y}`] + 1).concat(_hamiltonianCycleArray.slice(0, _hamiltonianCyclePositionIndexPairs[`${player.positionArray[0].x}, ${player.positionArray[0].y}`]))
+                return
+            }
+            if (_hamiltonianCycleArray && food.position) {
+                let path = _hamiltonianCycleArray.slice(_hamiltonianCyclePositionIndexPairs[`${player.positionArray[0].x}, ${player.positionArray[0].y}`]).concat(_hamiltonianCycleArray.slice(0, _hamiltonianCyclePositionIndexPairs[`${player.positionArray[0].x}, ${player.positionArray[0].y}`]))
+                let rightShift = path.length - _hamiltonianCyclePositionIndexPairs[`${player.positionArray[0].x}, ${player.positionArray[0].y}`]
+                let headIndex = 0
+                let foodIndex = (_hamiltonianCyclePositionIndexPairs[`${food.position.x}, ${food.position.y}`] + rightShift) % path.length
+                let tailIndex = player.positionArray.length === 1 ? foodIndex : (_hamiltonianCyclePositionIndexPairs[`${player.positionArray[player.positionArray.length - 1].x}, ${player.positionArray[player.positionArray.length - 1].y}`] + rightShift) % path.length
+                while (headIndex <= foodIndex) {
+                    headIndex !== 0 && player.path.push(path[headIndex])
+                    let skipIndex = headIndex + 1
+                    ;[
+                        { x: path[headIndex].x, y: path[headIndex].y - arena.cellSize },
+                        { x: path[headIndex].x, y: path[headIndex].y + arena.cellSize },
+                        { x: path[headIndex].x - arena.cellSize, y: path[headIndex].y },
+                        { x: path[headIndex].x + arena.cellSize, y: path[headIndex].y }
+                    ].forEach(neighbor => {
+                        let neighborIndex = (_hamiltonianCyclePositionIndexPairs[`${neighbor.x}, ${neighbor.y}`] + rightShift) % path.length
+                        if (headIndex < neighborIndex && neighborIndex <= foodIndex && neighborIndex + (food.energy * 4) < tailIndex) {
+                            skipIndex = Math.max(skipIndex, neighborIndex)
+                        }
+                    })
+                    headIndex = skipIndex
+                }
                 return
             }
             let vertex = {
                 x: Math.floor(Math.random() * canvas.height / arena.cellSize) * arena.cellSize,
-                y: Math.floor(Math.random() * canvas.height / arena.cellSize) * arena.cellSize
+                y: Math.floor(Math.random() * canvas.width / arena.cellSize) * arena.cellSize
             }
             _iter = 0
             calculateHamiltonianCyclePathHelper(player, [vertex], { [`${vertex.x}, ${vertex.y}`]: 1 })
         }
 
         function calculateHamiltonianCyclePathHelper(player, pathArray, pathHashTable) {
-            _iter += 1
+            _iter++
             let vertex = pathArray[pathArray.length - 1]
 
-            if (_cache || 32768 <= _iter) {
+            if (_hamiltonianCycleArray || 32768 <= _iter) {
                 return
             }
-            if (pathArray.length === (canvas.height * canvas.width / arena.cellSize / arena.cellSize)) {
-                _cache = pathArray.slice()
+            if (pathArray.length / arena.size === 1 && Math.sqrt((pathArray[0].x - pathArray[pathArray.length - 1].x) ** 2 + (pathArray[0].y - pathArray[pathArray.length - 1].y) ** 2) === arena.cellSize) {
+                _hamiltonianCycleArray = pathArray.slice()
+                _hamiltonianCyclePositionIndexPairs = _hamiltonianCycleArray.reduce((hamiltonianCyclePositionIndexPairs, position, index) => { hamiltonianCyclePositionIndexPairs[`${position.x}, ${position.y}`] = index; return hamiltonianCyclePositionIndexPairs }, {})
                 return
             }
 

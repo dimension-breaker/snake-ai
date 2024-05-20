@@ -10,4 +10,4 @@ calculateLongestTailChaserPath
 Average Score: 0.74
 
 calculateHamiltonianCyclePath
-Average Score: 1
+Average Score: 0.999
