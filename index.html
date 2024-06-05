@@ -82,7 +82,7 @@
             winners: []
         }
         let player = {
-            color: [153, 0, 0]
+            color: [200, 100, 200]
         }
         let food = {
             color: [153, 255, 255],
@@ -93,13 +93,14 @@
             arena.desiredKey = undefined
             player.calculatePath = window[document.getElementById('calculatePath').value]
             player.exploredPaths = []
+            _hamiltonianCycleArray = undefined
             player.length = 4
             player.path = []
             player.positionArray = [{ x: canvas.width / 4, y: canvas.height / 4 }]
             player.positionHashTable = { [`${canvas.width / 4}, ${canvas.height / 4}`]: 1 }
             player.saturation = arena.size * 10
         }
-        restart()
+        let _hamiltonianCycleArray; restart()
 
         window.onload = () => {
             canvas = document.getElementById('canvas')
@@ -338,7 +339,6 @@
                 })
         }
 
-        let _hamiltonianCycleArray
         let _rotationShift
         let _hamiltonianCyclePositionIndexPairs
         let _showRotationShift = false
