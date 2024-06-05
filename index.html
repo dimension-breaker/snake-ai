@@ -63,8 +63,9 @@
                     This algorithm does win a shocking number of times.
                 </div>
                 <div>
-                    <strong>calculateHamiltonianCyclePath [Average Score: 99.9%]</strong> - Instead of sometimes making a hamiltonian cycle, we're just gonna make one and reuse it.
-                    And instead of using A* as a random fallback, we're gonna have a similar heuristic to help make shortcuts in the hamiltonian cycle.
+                    <strong>calculateHamiltonianCyclePath [Average Score: 99.9%]</strong> - Make a hamiltonian cycle and reuse it.
+                    It'll take as many shortcuts as possible.
+                    However, if a shortcut as more than a 5% chance of death, it won't take it.
                     Sometimes, it'll take a risky shortcut near the endgame and lose, however, this is very rare.
                 </div>
             </div>
