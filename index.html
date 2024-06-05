@@ -37,7 +37,7 @@
                 </select>
                 <div>
                     <strong>calculateArrowKeysPath [Average Score: ??]</strong> - The path here is calculated via your arrow keys.
-                    For only this algorithm, the framerate here is slowed 20x to help you out.
+                    For only this algorithm, the framerate here is slowed to help you out.
                     How well can you do?
                     Tip: After you click on the restart button, it'll be focused and if you press the enter key, it'll do a restart.
                 </div>
@@ -196,7 +196,7 @@
             }
             if (player.positionArray.length && arena.acceptedKey) {
                 player.path.push({ x: player.positionArray[0].x + arena.acceptedKey.x, y: player.positionArray[0].y + arena.acceptedKey.y })
-                _sleep = 20
+                _sleep = 100 / arena.msPerFrame
             }
         }
 
