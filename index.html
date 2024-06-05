@@ -1,12 +1,11 @@
 <head>
     <meta content='width=device-width' name='viewport'>
     <link href='#' rel='icon'>
-    <link href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css' rel='stylesheet'>
 </head>
 <body>
     <style>
         div, select {
-            font-family: 'Courier New', monospace;
+            font-family: monospace;
             font-size: 12px;
         }
         @media (max-width: 500px) {
@@ -21,8 +20,8 @@
             <div style='display: flex; flex-direction: column; gap: 4px;'>
                 <div style='align-items: center; display: flex; justify-content: space-between;'>
                     <div style='font-size: 24px;'>Snake AI</div>
-                    <button onclick='restart()' style='background-color: white; border: 1px solid lightgray; border-radius: 4px; padding: 4px'>
-                        <i class='fa fa-refresh'></i>
+                    <button onclick='restart()' style='background-color: white; border: 1px solid lightgray; border-radius: 4px; font-family: monospace; padding: 4px'>
+                        Restart
                     </button>
                 </div>
                 <div id='score'></div>
@@ -376,7 +375,6 @@
                     player.length < positionArray.length + 1 && positionArray.pop()
                     positionArray.unshift(path[skipIndex])
                 }
-                player.exploredPaths = player.path.slice(Math.max(0, player.path.length - 20 * food.energy)).map(position => `${position.x}, ${position.y}`)
                 return
             }
             let vertex = {
