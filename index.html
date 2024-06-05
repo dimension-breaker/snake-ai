@@ -5,7 +5,7 @@
 <body>
     <style>
         div, select {
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
             font-size: 12px;
         }
         @media (max-width: 500px) {
@@ -20,7 +20,7 @@
             <div style='display: flex; flex-direction: column; gap: 4px;'>
                 <div style='align-items: center; display: flex; justify-content: space-between;'>
                     <div style='font-size: 24px;'>Snake AI</div>
-                    <button onclick='restart()' style='background-color: white; border: 1px solid lightgray; border-radius: 4px; font-family: monospace; padding: 4px'>
+                    <button onclick='restart()' style="background-color: white; border: 1px solid lightgray; border-radius: 4px; font-family: 'Courier New', monospace; padding: 4px;">
                         Restart
                     </button>
                 </div>
@@ -149,7 +149,7 @@
                     player.exploredPaths.forEach(position => context.fillRect(Number(position.split(', ')[0]), Number(position.split(', ')[1]), arena.cellSize, arena.cellSize))
                     if (player.calculatePath === calculateHamiltonianCyclePath) {
                         context.beginPath()
-                        _showRotationShift && (context.font = '10px Roboto Mono')
+                        _showRotationShift && (context.font = '10px Courier New')
                         _showRotationShift && (context.textAlign = 'center')
                         _showRotationShift && (context.textBaseline = 'middle')
                         _hamiltonianCycleArray?.forEach((position, i) => {
