@@ -77,7 +77,7 @@
             color: [0, 0, 0],
             desiredKey: undefined,
             isAutoRestart: false,
-            msPerFrame: 20,
+            msPerFrame: 10,
             size: canvas.height * canvas.width / 20 / 20,
             winners: []
         }
@@ -161,7 +161,7 @@
                         context.stroke()
                     }
                 }
-                document.getElementById('score').innerHTML = 'Current Score: ' + Math.round(player.positionArray.length / arena.size * 100) + '%'
+                document.getElementById('score').innerHTML = 'Current Score: ' + Math.floor(player.positionArray.length / arena.size * 100) + '%'
 
                 if (!food.position && player.length / arena.size < 1) {
                     let availablePositions = []
